@@ -258,6 +258,82 @@ def phase_matters_figure(
     return Path(output_path)
 
 
+def pipeline_figure(
+    mono: np.ndarray,
+    sample_rate: int,
+    output_path: str | Path,
+    *,
+    title: str = "",
+) -> Path:
+    """Hero flow: waveform → (magnitude + phase images) → waveform.
+
+    Three stages left to right with arrows: the input waveform, the two images
+    that fully store it, and the waveform rebuilt from those two images alone.
+    """
+    from experiments.invertible import complex_wavelet, inverse_complex_wavelet, reconstruction_stats
+
+    coeffs, meta = complex_wavelet(mono, sample_rate, n_bands=128)
+    reconstructed = inverse_complex_wavelet(coeffs, meta)
+    snr = reconstruction_stats(mono, reconstructed)["snr_db"]
+    n = mono.shape[0]
+    times = np.arange(n) / sample_rate
+    centers = meta.centers
+    extent = [0, n / sample_rate, 0, coeffs.shape[0]]
+
+    fig = plt.figure(figsize=(16, 7.5))
+    bg = fig.add_axes([0, 0, 1, 1]); bg.axis("off")
+    bg.text(0.5, 0.965, "Audio → two images → audio: lossless round trip", ha="center",
+            fontsize=16, weight="bold")
+    bg.text(0.5, 0.93, title, ha="center", fontsize=9.5, color="#555")
+
+    stage = dict(ha="center", fontsize=12, weight="bold", color="#1a3b6e")
+    bg.text(0.15, 0.875, "1 · INPUT WAVEFORM", **stage)
+    bg.text(0.52, 0.875, "2 · THE TWO IMAGES THAT STORE IT", **stage)
+    bg.text(0.875, 0.875, "3 · REBUILT FROM THE IMAGES", **stage)
+
+    def _freq_yaxis(ax):
+        idx = np.linspace(0, len(centers) - 1, 5).astype(int)
+        ax.set_yticks(idx); ax.set_yticklabels([f"{centers[i]:.0f}" for i in idx], fontsize=7)
+        ax.set_ylabel("Hz", fontsize=7)
+
+    ax_in = fig.add_axes([0.04, 0.30, 0.22, 0.48])
+    ax_in.plot(times, mono, color="#1f77b4", lw=0.6)
+    ax_in.set_xlim(0, n / sample_rate); ax_in.set_xlabel("s", fontsize=7); ax_in.tick_params(labelsize=7)
+
+    ax_mag = fig.add_axes([0.38, 0.555, 0.28, 0.27])
+    # Per-band display normalization so the brief broadband attack (high-freq
+    # content at t=0) is visible alongside the dominant low-frequency body.
+    mag = np.abs(coeffs)
+    mag_disp = mag / (mag.max(axis=1, keepdims=True) + 1e-12)
+    ax_mag.imshow(mag_disp, origin="lower", aspect="auto", extent=extent, cmap="magma")
+    ax_mag.set_title("magnitude (per-band normalized for display)", fontsize=9, loc="left")
+    _freq_yaxis(ax_mag); ax_mag.set_xticks([])
+
+    ax_ph = fig.add_axes([0.38, 0.20, 0.28, 0.27])
+    ax_ph.imshow(np.angle(coeffs), origin="lower", aspect="auto", extent=extent, cmap="twilight",
+                 vmin=-np.pi, vmax=np.pi)
+    ax_ph.set_title("phase", fontsize=9, loc="left"); _freq_yaxis(ax_ph); ax_ph.set_xlabel("s", fontsize=7)
+
+    ax_out = fig.add_axes([0.74, 0.30, 0.22, 0.48])
+    ax_out.plot(times, mono, color="#bbbbbb", lw=1.4, label="original")
+    ax_out.plot(times, reconstructed[:n], color="#d62728", lw=0.6, label="rebuilt")
+    ax_out.set_xlim(0, n / sample_rate); ax_out.set_xlabel("s", fontsize=7); ax_out.tick_params(labelsize=7)
+    ax_out.legend(fontsize=6.5, loc="upper right")
+    ax_out.set_title(f"identical — SNR {snr:.0f} dB", fontsize=9, loc="left")
+
+    arrow = dict(arrowstyle="-|>", color="#1a3b6e", lw=2.5, mutation_scale=22)
+    bg.annotate("", xy=(0.37, 0.52), xytext=(0.27, 0.52), arrowprops=arrow)
+    bg.annotate("", xy=(0.73, 0.52), xytext=(0.67, 0.52), arrowprops=arrow)
+    bg.text(0.32, 0.55, "analyze", ha="center", fontsize=8, color="#1a3b6e", style="italic")
+    bg.text(0.70, 0.55, "invert", ha="center", fontsize=8, color="#1a3b6e", style="italic")
+    bg.text(0.52, 0.135, "magnitude + phase together are the complete, lossless record of the sound",
+            ha="center", fontsize=8.5, color="#444", style="italic")
+
+    fig.savefig(output_path, dpi=120, bbox_inches="tight")
+    plt.close(fig)
+    return Path(output_path)
+
+
 def anatomy_table_figure(
     mono: np.ndarray,
     sample_rate: int,

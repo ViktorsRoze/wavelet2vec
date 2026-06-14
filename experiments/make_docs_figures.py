@@ -16,10 +16,11 @@ import numpy as np
 from experiments import viz
 from experiments.invertible import complex_wavelet, inverse_complex_wavelet, reconstruction_stats
 
-# A real example one-shot to showcase (the user's own library): an FX sweep
-# with rich evolving texture. Relative to --audio-dir.
-EXAMPLE_REL = "fx_at_120BPM/sw2_fx120_ghostrider.wav"
+# Real examples from the user's own library. Relative to --audio-dir.
+EXAMPLE_REL = "fx_at_120BPM/sw2_fx120_ghostrider.wav"   # FX sweep, evolving texture
 EXAMPLE_SECONDS = 4.0
+KICK_REL = "kicks/AA viktor rose A1 2.wav"  # kick: low body (A1) + bright attack
+KICK_SECONDS = 0.42
 
 
 def synthetic_signal(sample_rate: int = 44100, seconds: float = 1.0) -> np.ndarray:
@@ -63,20 +64,31 @@ def main() -> None:
     viz.anatomy_table_figure(mono, sr, out / "coefficient_anatomy.jpg", n_bands=128)
     print(f"wrote {out/'coefficient_anatomy.jpg'}")
 
-    # Real example from the user's library: an FX sweep with evolving texture.
-    example = Path(args.audio_dir) / EXAMPLE_REL
-    if example.exists():
-        from experiments.dataset import Track, load_canonical
+    # Real examples from the user's own library.
+    from experiments.dataset import Track, load_canonical
 
-        track = Track(path=example, folder=example.parent.name, duration=0.0,
+    def _load(rel, seconds):
+        path = Path(args.audio_dir) / rel
+        if not path.exists():
+            print(f"(skipped; not found at {path})")
+            return None, None
+        track = Track(path=path, folder=path.parent.name, duration=0.0,
                       native_sr=sr, channels=2, subtype="PCM_24")
-        audio = load_canonical(track, sr)
-        clip = audio.mono[: int(EXAMPLE_SECONDS * sr)]
-        clip = clip / (np.abs(clip).max() + 1e-12)
-        _roundtrip(clip, sr, out / "roundtrip_fx_example.jpg",
-                   f"real FX one-shot — {example.name} (first {EXAMPLE_SECONDS:.0f} s)")
-    else:
-        print(f"(skipped real example; not found at {example})")
+        clip = load_canonical(track, sr).mono[: int(seconds * sr)]
+        return clip / (np.abs(clip).max() + 1e-12), path
+
+    # Hero pipeline figure on a kick (low body + bright attack).
+    kick, kpath = _load(KICK_REL, KICK_SECONDS)
+    if kick is not None:
+        viz.pipeline_figure(kick, sr, out / "pipeline_kick.jpg",
+                            title=f"kick drum — {kpath.name}")
+        print(f"wrote {out/'pipeline_kick.jpg'}")
+
+    # FX sweep round trip (evolving texture).
+    fx, fxpath = _load(EXAMPLE_REL, EXAMPLE_SECONDS)
+    if fx is not None:
+        _roundtrip(fx, sr, out / "roundtrip_fx_example.jpg",
+                   f"real FX one-shot — {fxpath.name} (first {EXAMPLE_SECONDS:.0f} s)")
 
 
 if __name__ == "__main__":

@@ -360,14 +360,20 @@ down-sampled) so mel and wavelet see identical signals.
 A magnitude-only spectrogram (mel, CQT magnitude, Griffin-Lim) throws phase
 away and **cannot** be inverted. Keep the **full complex coefficients
 (magnitude *and* phase)** at full resolution and the transform is exactly
-invertible — the image literally is the audio. The suite turns each snippet
-into a picture and back:
+invertible — the image literally is the audio:
+
+![waveform → magnitude + phase images → waveform](docs/figures/pipeline_kick.jpg)
+
+*A kick drum (its own low A1 body plus a bright broadband attack) becomes two
+images — magnitude and phase — and those two images alone rebuild the exact
+waveform (304 dB). Nothing else about the sound is stored.*
+
+The same round trip with the reconstruction error plotted out:
 
 ![audio → magnitude + phase images → audio, with reconstruction error](docs/figures/roundtrip_showcase.jpg)
 
-*Audio in → the magnitude and phase images → audio back out. The original and
-reconstruction overlap exactly (305 dB in memory), and the error (bottom-right)
-is pure numerical noise at ~5×10⁻¹⁶.*
+*The original and reconstruction overlap exactly (305 dB in memory); the error
+(bottom-right) is pure numerical noise at ~5×10⁻¹⁶.*
 
 It holds for real, complex material too — here a dense FX sweep with evolving
 broadband texture (from the included example library):

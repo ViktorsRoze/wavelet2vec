@@ -343,17 +343,104 @@ encoder = WaveletConvEncoder(trainable=True)  # torch nn.Module, [B, 1, N] -> [B
 ## Experiments & visualization
 
 The [`experiments/`](experiments/) suite (`pip install -e ".[viz]"`) visualizes
-every pipeline stage and compares the wavelet front end to mel spectrograms on
-your own audio, with metrics scored against filename/key labels:
+every pipeline stage, compares the wavelet front end to mel spectrograms, and
+runs a lossless audio↔image round trip — all on your own audio, with metrics
+scored against filename/key labels:
 
 ```bash
 python -m experiments.run_experiments --audio-dir /path/to/audio_library
 ```
 
-On a 356-file reference library, wavelet2vec reaches **0.60 k-NN folder purity
-vs 0.41** for a mel-summary baseline (random ≈ 0.09), and its harmonic section
-recovers pitch class slightly better than mel chroma overall (**0.54 vs 0.50**,
-and 0.90 vs 0.80 on bass). See [experiments/EXPERIMENTS.md](experiments/EXPERIMENTS.md).
+Input may be any bit depth, sample rate, channel count, or length; everything
+is normalized once up front (decode to float, resample to a common rate, never
+down-sampled) so mel and wavelet see identical signals.
+
+### Lossless / near-perfect audio ↔ image round trip
+
+A magnitude-only spectrogram (mel, CQT magnitude, Griffin-Lim) throws phase
+away and **cannot** be inverted. Keep the **full complex coefficients
+(magnitude *and* phase)** at full resolution and the transform is exactly
+invertible — the image literally is the audio. The suite turns each snippet
+into a picture and back:
+
+![audio → magnitude + phase images → audio, with reconstruction error](docs/figures/roundtrip_showcase.jpg)
+
+*Audio in → the magnitude and phase images → audio back out. The original and
+reconstruction overlap exactly (305 dB in memory), and the error (bottom-right)
+is pure numerical noise at ~5×10⁻¹⁶.*
+
+It holds for real, complex material too — here a dense FX sweep with evolving
+broadband texture (from the included example library):
+
+![lossless round trip of a real FX one-shot](docs/figures/roundtrip_fx_example.jpg)
+
+*A 4-second FX sweep with rich, time-varying content reconstructs at 303 dB —
+the intricate magnitude and phase images carry it back losslessly.*
+
+Saved as an actual image file, the storage format sets the fidelity:
+
+| storage format | reconstruction SNR | notes |
+| --- | --- | --- |
+| float64 (`.npy`) | ~300 dB | bit-exact, machine precision |
+| **float32 image (`.tiff`)** | **~160 dB** | **base case** — viewable image, beyond 24-bit audio (no audible loss) |
+| 16-bit image (`.png`) | ~84 dB | near-transparent, most compact |
+| 8-bit image (`.png`) | ~14 dB | destroyed — ordinary 8-bit is *not* enough |
+
+The base case is a **float32 TIFF**: each `roundtrip/perfect_tiff/<folder>_coefficients_float32.tiff`
+plus a tiny JSON sidecar (scale + wavelet parameters) is self-contained — it
+reconstructs the audio on its own (`<folder>_from_image.wav`) at ~160 dB,
+near-perfect for any playback chain. For literal bit-exactness, `.npy` keeps
+float64.
+
+#### What the image is made of: magnitude · phase · frequency
+
+![anatomy of the complex-coefficient image](docs/figures/coefficient_anatomy.jpg)
+
+Each coefficient carries a **magnitude** and a **phase**, laid out on a
+**frequency** axis of constant-Q wavelet bands. Measured on a 1 s / 44.1 kHz
+tone at 128 bands:
+
+| | Magnitude | Phase | Frequency |
+| --- | --- | --- | --- |
+| **What it is** | energy per time–frequency cell (the usual spectrogram) | alignment/timing of each cell — the half magnitude-only methods discard | which frequency each band covers (constant-Q, geometric) |
+| **Technical** | `|C| = √(re²+im²)`, log-scaled | `∠C = atan2(im, re) ∈ [−π, π]`, cyclic | geom-spaced centers + Gaussian windows that sum to full coverage |
+| **Information** | 5.64 M values (bands × samples) | 5.64 M values | 128 centers (just the axis) |
+| **On disk (float32)** | 22.6 MB / s | 22.6 MB / s | ~1 KB |
+| **CPU time** | ~10 ms to extract | ~87 ms to extract | ~83 ms to build the filterbank |
+| **Round-trip accuracy** | rel. error ≤ 5×10⁻⁸ | error ≤ 6×10⁻⁸ rad | 95 cents/band, 20 Hz–22 kHz, exact |
+
+Magnitude alone cannot reconstruct audio; **magnitude + phase together are
+exact**. The frequency axis is just metadata (a few hundred bytes). The
+forward transform is ~170 ms and the inverse ~60 ms per second of audio (CPU,
+float64). Regenerate these figures with
+`python -m experiments.make_docs_figures`.
+
+### What we learned
+
+- **Phase is half the sound.** A saw wave and its phase-scrambled twin have
+  *identical* magnitude spectra; only the phase differs. The `phase_matters`
+  figure shows full-complex reconstruction (perfect) vs. magnitude-only
+  (a smooth, destroyed blob). This is why wavelet2vec keeps phase — and why its
+  embedding has a dedicated, shift-invariant `phase` section.
+- **For lossless conversion, raise *value* resolution, not *image* resolution.**
+  The transform is mathematically exact at *any* number of frequency bands —
+  64, 128, or 256 bands all reconstruct at ~300 dB. Making the picture bigger
+  (more time/frequency cells) buys nothing; the only thing that limits a stored
+  round trip is the bit depth per coefficient. So "near-perfect" comes from
+  float pixels, not from a higher-resolution grid.
+- **The wavelet front end beats mel on musical structure.** On a 356-file
+  reference library, wavelet2vec reaches **0.60 k-NN folder purity vs 0.41** for
+  a mel-summary baseline (random ≈ 0.09), with positive vs. negative
+  silhouette — it groups sounds by content type far more cleanly. Its harmonic
+  section also recovers pitch class better than mel chroma overall (**0.54 vs
+  0.50**, and **0.90 vs 0.80 on bass**), scored against the notes in the
+  filenames.
+- **Constant-Q matches both hearing and music.** Log-spaced wavelet bands give
+  fine time resolution where transients live (highs) and fine frequency
+  resolution where pitch lives (lows) — visible side-by-side against the linear
+  mel grid in the comparison gallery.
+
+Full write-up, figures, and how to reproduce: [experiments/EXPERIMENTS.md](experiments/EXPERIMENTS.md).
 
 ## How it works
 

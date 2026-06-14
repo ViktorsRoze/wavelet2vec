@@ -258,6 +258,130 @@ def phase_matters_figure(
     return Path(output_path)
 
 
+def anatomy_table_figure(
+    mono: np.ndarray,
+    sample_rate: int,
+    output_path: str | Path,
+    *,
+    n_bands: int = 128,
+) -> Path:
+    """A table-figure breaking the coefficient image into its three aspects.
+
+    Columns are magnitude, phase, and frequency; each has a visual thumbnail
+    plus rows for explanation, technical detail, information needed, on-disk
+    size, CPU time, and round-trip accuracy. All numbers are measured live.
+    """
+    import textwrap
+    import time
+
+    from wavelet2vec.filterbank import log_spaced_frequencies
+
+    from experiments.invertible import (
+        _frame_windows as frame_windows,
+        complex_wavelet,
+        inverse_complex_wavelet,
+        reconstruction_stats,
+    )
+
+    def _ms(fn, reps: int = 3) -> float:
+        fn()
+        best = min((_timed(fn) for _ in range(reps)))
+        return best * 1000.0
+
+    def _timed(fn) -> float:
+        start = time.perf_counter()
+        fn()
+        return time.perf_counter() - start
+
+    coeffs, meta = complex_wavelet(mono, sample_rate, n_bands=n_bands)
+    magnitude, phase, centers = np.abs(coeffs), np.angle(coeffs), meta.centers
+    freqs = np.fft.rfftfreq(mono.shape[0], 1.0 / sample_rate)
+
+    t_mag = _ms(lambda: np.abs(coeffs))
+    t_phase = _ms(lambda: np.angle(coeffs))
+    t_freq = _ms(lambda: frame_windows(freqs.shape[0], freqs, log_spaced_frequencies(20, 0.5 * sample_rate, n_bands), 1.0))
+
+    c32 = coeffs.astype(np.complex64).astype(np.complex128)
+    mag_err = float(np.max(np.abs(np.abs(c32) - magnitude)) / (magnitude.max() + 1e-12))
+    phase_err = float(np.nanmax(np.abs(np.angle(c32 * np.conj(coeffs) / (np.abs(coeffs) ** 2 + 1e-20)))))
+    audio_snr = reconstruction_stats(mono, inverse_complex_wavelet(c32, meta))["snr_db"]
+    cents = 1200.0 * np.log2(centers[1] / centers[0])
+    count = coeffs.size
+    mb = count * 4 / 1e6
+    dur = mono.shape[0] / sample_rate
+
+    columns = {
+        "Magnitude": {
+            "x": 0.40,
+            "What it is": "How much energy each time–frequency cell holds — the loud/soft picture you normally call a spectrogram.",
+            "Technical": "|C| = √(re²+im²) per cell; shown log-scaled. Magnitude alone CANNOT reconstruct audio.",
+            "Information": f"{count:,} values\n(bands × samples)",
+            "On disk (float32)": f"{mb:.1f} MB / {dur:.0f}s",
+            "CPU time": f"{t_mag:.0f} ms to extract",
+            "Round-trip accuracy": f"rel. error ≤ {mag_err:.0e}\n(float32 image)",
+        },
+        "Phase": {
+            "x": 0.65,
+            "What it is": "The alignment/timing of each cell. This is the half that magnitude-only methods throw away — and the reason they can't invert.",
+            "Technical": "∠C = atan2(im, re) ∈ [−π, π]; wraps cyclically. Magnitude + phase together = exact reconstruction.",
+            "Information": f"{count:,} values\n(bands × samples)",
+            "On disk (float32)": f"{mb:.1f} MB / {dur:.0f}s",
+            "CPU time": f"{t_phase:.0f} ms to extract",
+            "Round-trip accuracy": f"error ≤ {phase_err:.0e} rad\n(float32 image)",
+        },
+        "Frequency": {
+            "x": 0.90,
+            "What it is": "Which frequency each band covers. Constant-Q (geometric) spacing: fine pitch resolution low, fine timing high.",
+            "Technical": "Geom-spaced centers + Gaussian windows whose sum covers the whole band (so inversion is exact).",
+            "Information": f"{len(centers)} centers\n(just the axis)",
+            "On disk (float32)": f"{centers.size * 8} bytes",
+            "CPU time": f"{t_freq:.0f} ms to build bank",
+            "Round-trip accuracy": f"{cents:.0f} cents/band\n{centers[0]:.0f}–{centers[-1]:.0f} Hz, exact",
+        },
+    }
+
+    fig = plt.figure(figsize=(15, 11))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.axis("off")
+    ax.text(0.5, 0.975, "Anatomy of the complex-coefficient image — magnitude · phase · frequency",
+            ha="center", fontsize=15, weight="bold")
+    ax.text(0.5, 0.95, f"constant-Q complex wavelet · {n_bands} bands · {dur:.0f} s @ {sample_rate} Hz · "
+            f"full complex round trip ≈ {audio_snr:.0f} dB (float32 image)", ha="center", fontsize=9, color="#555")
+
+    for name, col in columns.items():
+        ax.text(col["x"], 0.905, name, ha="center", fontsize=13, weight="bold", color="#222")
+
+    # Visual-example thumbnails.
+    extent = [0, dur, 0, n_bands]
+    thumbs = [("Magnitude", np.log1p(magnitude), "magma", None),
+              ("Phase", phase, "twilight", (-np.pi, np.pi))]
+    for index, (name, data, cmap, lim) in enumerate(thumbs):
+        tax = fig.add_axes([0.30 + 0.25 * index, 0.70, 0.18, 0.17])
+        kw = {"vmin": lim[0], "vmax": lim[1]} if lim else {}
+        tax.imshow(data, origin="lower", aspect="auto", extent=extent, cmap=cmap, **kw)
+        tax.set_xticks([]); tax.set_yticks([])
+    fax = fig.add_axes([0.80, 0.70, 0.18, 0.17])
+    for band in range(0, n_bands, max(n_bands // 16, 1)):
+        fax.semilogx(freqs[1:], meta.windows[band][1:], lw=0.7)
+    fax.set_xlim(20, sample_rate / 2); fax.set_yticks([]); fax.tick_params(labelsize=6)
+    fax.set_xlabel("Hz (log)", fontsize=6)
+
+    row_labels = ["What it is", "Technical", "Information", "On disk (float32)", "CPU time", "Round-trip accuracy"]
+    y = 0.625
+    dy = 0.098
+    for label in row_labels:
+        ax.text(0.02, y, label, ha="left", va="top", fontsize=9.5, weight="bold", color="#333")
+        ax.axhline(y + 0.012, xmin=0.02, xmax=0.98, color="#eee", lw=0.6)
+        for col in columns.values():
+            wrapped = textwrap.fill(col[label], width=30)
+            ax.text(col["x"], y, wrapped, ha="center", va="top", fontsize=8.3, color="#111")
+        y -= dy
+
+    fig.savefig(output_path, dpi=120, bbox_inches="tight")
+    plt.close(fig)
+    return Path(output_path)
+
+
 def projection_figure(
     points_by_method: dict[str, np.ndarray],
     labels: list[str],

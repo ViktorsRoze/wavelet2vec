@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wavelet2vec"
+version = "0.3.0"
+description = "Deterministic, phase-aware musical embeddings for short audio snippets, built on constant-Q Morlet wavelets."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Viktors Roze", email = "viktors.roze@gmail.com" }]
+keywords = ["audio", "embedding", "wavelet", "sound-design", "mir", "similarity", "phase"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Multimedia :: Sound/Audio :: Analysis",
+]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "soundfile>=0.12",
+  "torch>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+flstudio = ["pyflp>=2.2,<3"]
+viz = ["matplotlib>=3.6", "scikit-learn>=1.1", "imageio>=2.20", "tifffile>=2022.0"]
+
+[project.urls]
+Homepage = "https://github.com/viktorsroze/wavelet2vec"
+
+[project.scripts]
+wavelet2vec = "wavelet2vec.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["wavelet2vec*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]

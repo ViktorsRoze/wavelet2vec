@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# IDE
+.idea/
+.vscode/
+
+# Outputs
+*.npz
+outputs/
+experiments/output/
+experiments/output*/
+
+# Third-party audio (never commit sample-library content)
+example_audio/
+*.wav
+*.flac
+*.aif
+*.aiff

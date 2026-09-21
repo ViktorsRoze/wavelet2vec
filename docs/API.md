@@ -1,5 +1,62 @@
 # wavelet2vec — API Reference
 
+v0.33.0 adds `MultitrackRecord`, `MultitrackManifest`, `MultitrackWindow`,
+`MultitrackDataset`, `collate_multitracks`, `SeparationRunConfig`,
+`SeparationTrainingRun` and `evaluate_separation`.
+[SUPERVISED_MULTITRACK.md](SUPERVISED_MULTITRACK.md) defines aligned source
+verification, native crops, sample-weighted optimization and strict resume.
+
+v0.32.0 adds `SynthesisConfig`, `SourceSynthesis`, `HybridSourceDecoder`,
+`HybridSeparator`, `project_source_coefficients` and `separate_audio`.
+[SOURCE_SYNTHESIS.md](SOURCE_SYNTHESIS.md) defines supervised source rendering,
+physical coefficient grids, residual synthesis and offline window inference.
+
+The phase-preserving model API added in v0.25.0 is documented in
+[HYBRID_ENCODING.md](HYBRID_ENCODING.md): `HybridConfig`,
+`HybridAudioFrontend`, `HybridEncoding`, `HybridTokenEncoder` and
+`HybridLatents`. It accepts explicit `[batch, channels, samples]` torch
+tensors without resampling or downmixing and retains an invertible complex
+carrier alongside the original waveform. Its learned tokens are lossy.
+
+v0.26.0 adds `backend="compact_wavelet"`, `CompactBand` metadata,
+`HybridEncoding.band_times_s(index)` and `coefficient_nbytes`.
+[COMPACT_WAVELETS.md](COMPACT_WAVELETS.md) defines the ragged band tuple,
+inverse and memory/performance tradeoffs.
+
+The retrieval and legacy image APIs below have separate contracts: pooled
+features are not substitutes for full complex synthesis coefficients.
+
+For long recordings, v0.27.0 adds `SlidingHybridEncoder`,
+`SlidingWindowConfig`, `SlidingTokenBatch` and `HybridSequence`.
+[LONG_AUDIO.md](LONG_AUDIO.md) documents file/reader extraction, global
+coordinates, carrier retention and coarse summaries. The local frontend
+accepts `sample_origin` without changing analysis coefficients or synthesis.
+
+v0.28.0's composable model utilities are documented in
+[ADAPTERS_AND_TRAINING.md](ADAPTERS_AND_TRAINING.md):
+`MultiResolutionTokenEncoder`, `StereoTokenEncoder`, `hybrid_stereo_features`,
+`SourceExample` / `collate_sources`, `separation_loss`, and
+`FeatureCache` / `FeatureCacheKey`. They retain explicit timing, supervision
+and cache contracts; they are not a complete self-supervised music model.
+
+v0.29.0 adds `MusicContextEncoder`, `MaskedMusicModel`, `AudioBatch` /
+`collate_audio`, `MaskedPredictionConfig`, `sample_span_mask`,
+`MusicPretrainer`, `PretrainingConfig` and `LengthBucketSampler`.
+[SELF_SUPERVISED_MUSIC.md](SELF_SUPERVISED_MUSIC.md) documents learned
+local/global context, isolated student/teacher paths and resumable training.
+The fixed acoustic objective is an initial research task, not a validated
+musical semantic representation.
+
+v0.30.0 adds `FixedTargetStatistics` and opt-in standardized masked targets.
+[TARGET_CALIBRATION.md](TARGET_CALIBRATION.md) documents fitting, prediction
+units, checkpoint migration and the limited synthetic evidence.
+
+v0.31.0 adds `AudioRecord`, `AudioManifest`, `AudioCropConfig`,
+`AudioWindowDataset`, `collate_windows`, `TrainingTargetMean`,
+`fit_training_target_mean`, `evaluate_masked_corpus`, and
+`CorpusPretrainingRun`. [REAL_AUDIO_PRETRAINING.md](REAL_AUDIO_PRETRAINING.md)
+documents verified crops, split guards, resume and diagnostic baselines.
+
 ## `Wavelet2Vec`
 
 ```python
@@ -198,11 +255,96 @@ always included); each note's ADSR is gated to its slice length.
 WAV/AIFF by default (FLAC falls back to 24-bit); pass `subtype="PCM_16"` etc.
 to override.
 
-## Feature modules
+## Invertible frame + GPU backend
+
+```python
+from wavelet2vec import analyze, synthesize          # numpy, exact ~300 dB
+from wavelet2vec import analyze_torch, synthesize_torch, analyze_batch
+
+coeffs, spec = analyze(audio, sr, n_bands=128)        # [n_bands, N] complex
+audio = synthesize(coeffs, spec)                      # exact inverse
+
+# Torch backend (optional dep): device="cpu"|"cuda", precision double/single.
+# Same FrameSpec, so the backends interchange freely.
+coeffs, spec = analyze_torch(audio, sr, device="cuda", precision="single")
+batch, spec = analyze_batch(fragments, sr)            # [B, N] -> [B, n_bands, N]
+```
+
+`precision="double"` matches numpy to machine precision; `"single"` (complex64)
+round-trips ~131 dB and is the fast GPU path. Batched short-fragment analysis
+is ~9× the numpy loop on CPU alone.
+
+## Rhythm & groove
+
+```python
+from wavelet2vec import (analyze_rhythm, estimate_tempo, apply_groove,
+                         swing_offsets, groove_offsets, rhythm_embedding)
+
+bpm, confidence = estimate_tempo(loop, sr)            # no BPM needed
+profile = analyze_rhythm(loop, sr, bpm=bpm)           # swing, microtiming, pattern
+swung = apply_groove(loop, sr, bpm, swing_offsets(2/3, bpm))   # straight -> triplet
+grooved = apply_groove(target, sr, bpm, groove_offsets(source_profile))
+vec = rhythm_embedding(loop, sr, bpm=bpm)             # 89-dim, tempo-normalized
+```
+
+## Harmony, melody, structure
+
+```python
+from wavelet2vec import (track_f0, segment_notes, chromagram, estimate_key,
+                         track_chords, segment_structure, find_loop_points,
+                         render_loop)
+
+track = track_f0(audio, sr); notes = segment_notes(track)      # MIDI note events
+key = estimate_key(loop, sr)                          # KeyEstimate(name, confidence)
+chords = track_chords(loop, sr)                       # [(start_s, end_s, "Am"), ...]
+sections = segment_structure(clip, sr)                # boundaries + sections
+loop = find_loop_points(audio, sr, min_loop_s=1.9)    # seamless loop; render_loop() to play
+```
+
+## Spatial analysis & design
+
+```python
+from wavelet2vec import (stereo_phase_spectrum, spatial_matrix,
+                         extract_spatial_character, apply_spatial_character,
+                         design_width)
+
+phase = stereo_phase_spectrum(stereo, sr)             # per-band IPD/coherence/balance over time
+character = extract_spatial_character(reference, sr)  # width-vs-frequency profile
+wide = apply_spatial_character(source, sr, character) # match a reference's width; mono untouched
+widened = design_width(mono_or_stereo, sr, 0.3, coherence_floor=0.2)  # phase-safe widener
+```
+
+## Decomposition & spectral editing
+
+```python
+from wavelet2vec import hpss, transient_split, shape_transients
+from wavelet2vec import (attenuate_region, isolate_regions, process_regions,
+                         phase_rotate_regions, phase_scramble_regions)
+
+harmonic, percussive = hpss(audio, sr)                # exact sum == input
+edited = attenuate_region(audio, sr, 0.3, 0.6, 1400, 2800, gain_db=-80)   # T-F erase
+# Region-limited effects (inside processed, outside preserved by linearity):
+regions = [(0.3, 0.6, 1400.0, 2800.0)]
+ducked = process_regions(audio, sr, regions, lambda x: x * 0.25)
+flipped = phase_rotate_regions(audio, sr, regions, 180.0)
+smeared = phase_scramble_regions(audio, sr, regions)
+```
+
+## Datasets (supervision ladders)
+
+```python
+from wavelet2vec.datasets import (filter_ladder, sine_distortion_ladder,
+                                  noise_mix_ladder, attack_ladder, axis_labels,
+                                  lowpass_pair, render_ladder_dataset)
+```
+
+Graded, monotone-verified ladders that supervise each imagination-axis knob
+directly (brightness, distortion, harmonicity, attack). `axis_labels` measures
+brightness/harmonicity/attack with the same features the models condition on.
 
 ## Feature modules
 
-Each section's features are importable directly for custom pipelines:
+Every embedding feature is importable directly for custom pipelines:
 
 | Module | Functions |
 | --- | --- |
@@ -212,6 +354,13 @@ Each section's features are importable directly for custom pipelines:
 | `wavelet2vec.harmonic_features` | `harmonic_features`, `autocorrelation_pitch` |
 | `wavelet2vec.phase_features` | `phase_features`, `instantaneous_frequency_features`, `onset_phase_coherence`, `harmonic_phase_signature` |
 | `wavelet2vec.stereo_features` | `stereo_features`, `neutral_stereo_features` |
+| `wavelet2vec.rhythm` | `analyze_rhythm`, `estimate_tempo`, `apply_groove`, `swing_offsets`, `groove_offsets`, `rhythm_embedding`, `profile_embedding` |
+| `wavelet2vec.harmony` | `track_f0`, `segment_notes`, `chromagram`, `estimate_key`, `track_chords` |
+| `wavelet2vec.structure` | `segment_structure`, `find_loop_points`, `render_loop` |
+| `wavelet2vec.decompose` | `hpss`, `transient_split`, `shape_transients` |
+| `wavelet2vec.spatial` | `stereo_phase_spectrum`, `spatial_matrix`, `extract_spatial_character`, `apply_spatial_character`, `design_width` |
+| `wavelet2vec.spectral_edit` | `attenuate_region`, `region_mask`, `isolate_regions`, `process_regions`, `phase_rotate_regions`, `phase_scramble_regions` |
+| `wavelet2vec.torch_frame` | `analyze_torch`, `synthesize_torch`, `analyze_batch` |
 | `wavelet2vec.style_transfer` | `blend`, `style_transfer` |
 | `wavelet2vec.character` | `SoundCharacter`, `extract_character`, `average_characters`, `character_from_files`, `character_from_folder`, `apply_character` |
 | `wavelet2vec.adsr` | `ADSR`, `apply_adsr_volume`, `apply_adsr_character` |

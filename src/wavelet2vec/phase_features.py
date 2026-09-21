@@ -20,20 +20,34 @@ def instantaneous_frequency_features(
     (large, erratic). Returns ``[2 * n_groups]``: mean absolute deviation and
     deviation spread per group, both relative to the band center frequency.
     """
-    phase = np.unwrap(np.angle(complex_scalogram), axis=1)
-    inst_freq = np.diff(phase, axis=1) * sample_rate / (2.0 * np.pi)
-    weights = np.abs(complex_scalogram[:, :-1]).astype(np.float64) ** 2
-    centers = center_frequencies[:, None]
+    # Phase increment via the conjugate product: identical to
+    # diff(unwrap(angle(c))) for analytic band signals (increments stay in
+    # (-π, π]) and far cheaper — no unwrap pass, one angle over the product.
+    increment = complex_scalogram[:, 1:] * np.conj(complex_scalogram[:, :-1])
+    inst_freq = np.angle(increment) * np.float32(sample_rate / (2.0 * np.pi))
+    weights = np.abs(complex_scalogram[:, :-1]) ** 2  # float32 temporaries,
+    centers = center_frequencies[:, None].astype(np.float32)
     deviation = np.clip((inst_freq - centers) / centers, -1.0, 1.0)
 
-    band_weight = weights.sum(axis=1) + 1e-12
-    band_mad = (weights * np.abs(deviation)).sum(axis=1) / band_weight
-    band_mean = (weights * deviation).sum(axis=1) / band_weight
+    # …float64 accumulation: full precision where it matters, half the memory
+    # traffic where it doesn't.
+    band_weight = weights.sum(axis=1, dtype=np.float64) + 1e-12
+    band_mad = (weights * np.abs(deviation)).sum(axis=1, dtype=np.float64) / band_weight
+    band_mean = (weights * deviation).sum(axis=1, dtype=np.float64) / band_weight
     band_std = np.sqrt(
-        (weights * (deviation - band_mean[:, None]) ** 2).sum(axis=1) / band_weight
+        (weights * (deviation - band_mean[:, None].astype(np.float32)) ** 2)
+        .sum(axis=1, dtype=np.float64) / band_weight
     )
 
-    n_bands = complex_scalogram.shape[0]
+    return group_if_stats(band_weight, band_mad, band_std, n_groups)
+
+
+def group_if_stats(band_weight: np.ndarray, band_mad: np.ndarray,
+                   band_std: np.ndarray, n_groups: int) -> np.ndarray:
+    """Energy-weighted pooling of per-band IF stats into ``2 * n_groups``
+    values — shared by the numpy path above and the batched torch path in
+    :meth:`wavelet2vec.embedder.Wavelet2Vec.embed_batch`."""
+    n_bands = band_weight.shape[0]
     group_size = max(n_bands // n_groups, 1)
     grouped = np.zeros(2 * n_groups, dtype=np.float32)
     for group in range(n_groups):
@@ -125,17 +139,26 @@ def phase_features(
     sample_rate: int,
     n_groups: int = 8,
     n_harmonics: int = 8,
+    *,
+    if_features: np.ndarray | None = None,
+    onset_coherence: np.ndarray | None = None,
 ) -> np.ndarray:
     """Shift-invariant phase information: what raw phase values cannot give.
 
+    ``if_features`` / ``onset_coherence`` accept precomputed blocks (the
+    batched torch path in ``embed_batch``); ``None`` computes them here.
     Returns ``[2 * n_groups + 3 + 3 * (n_harmonics - 1)]``.
     """
+    if if_features is None:
+        if_features = instantaneous_frequency_features(
+            complex_scalogram, center_frequencies, sample_rate, n_groups=n_groups
+        )
+    if onset_coherence is None:
+        onset_coherence = onset_phase_coherence(complex_scalogram)
     return np.concatenate(
         [
-            instantaneous_frequency_features(
-                complex_scalogram, center_frequencies, sample_rate, n_groups=n_groups
-            ),
-            onset_phase_coherence(complex_scalogram),
+            if_features,
+            onset_coherence,
             harmonic_phase_signature(mono, sample_rate, n_harmonics=n_harmonics),
         ]
     )

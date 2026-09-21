@@ -1,0 +1,32 @@
+{
+  "scope": "Real-recording decoder/forward integration only; unknown provenance kept in one training group; no updates or held-out quality evaluation.",
+  "version": "0.31.0",
+  "implementation": "083b8c4093664d1db300156adb7afd9fc0341a27bc8d07bf8302edd374ec637d",
+  "manifest_identity": "f080ba70bcd512a9e573cc385e1f145e9e4291538abb89e1847865781638ef0f",
+  "windows": [
+    {
+      "file": "sp_syn120_aerial_E.wav",
+      "source_frames": 352800,
+      "sample_rate": 44100,
+      "channels": 2,
+      "crop_start": 0,
+      "crop_samples": 44288,
+      "source_pcm_hash": "5085935bd20966b527177c57b47d48f8b2800cfa271e281beffebeb85e0e0f15",
+      "finite_predictions": true,
+      "finite_loss": true,
+      "context_tokens": 173
+    },
+    {
+      "file": "sp_syn120_anagrams_D.wav",
+      "source_frames": 352800,
+      "sample_rate": 44100,
+      "channels": 2,
+      "crop_start": 0,
+      "crop_samples": 44288,
+      "source_pcm_hash": "52d5a37dfd48511de935daae3423c176bb159acb469bee4769ebdf6bcdbcbdd2",
+      "finite_predictions": true,
+      "finite_loss": true,
+      "context_tokens": 173
+    }
+  ]
+}

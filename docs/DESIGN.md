@@ -3,6 +3,14 @@
 This document explains the design decisions behind `wavelet2vec`: why the
 representation looks the way it does, and the math behind the phase features.
 
+This document describes the historical deterministic retrieval embedding,
+whose invariances deliberately discard information. It is not the design
+contract for lossless model inputs. See [HYBRID_ENCODING.md](HYBRID_ENCODING.md)
+for the v0.25.0 waveform/complex-carrier foundation. A complex STFT or raw
+waveform can preserve phase; wavelet suitability must be established by
+matched downstream experiments. Time-shift invariance useful for retrieval
+must not be confused with information preservation for synthesis.
+
 ## 1. The problem
 
 We want a fixed-size vector for a short audio snippet (0.2–5 s) such that

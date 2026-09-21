@@ -23,6 +23,7 @@ def perform(
     transfer_spectrum: bool = True,
     transfer_envelope: bool = True,
     max_gain_db: float = 24.0,
+    channel_mode: str = "shared",
 ) -> np.ndarray:
     """Transforms a continuous musical performance note by note.
 
@@ -40,6 +41,12 @@ def perform(
     untouched), so the result re-imports into the DAW sample-aligned at
     bar 1, like an offline effect. A short fade at each note boundary
     (``boundary_fade_seconds``) suppresses clicks from per-note gain steps.
+
+    Multichannel renders share one timeline: note boundaries, ADSR envelopes,
+    and automation values are identical on every channel, while
+    ``channel_mode`` decides how the morph itself treats channels
+    (``"shared"`` gains / ``"per_channel"`` matching / image-preserving
+    ``"mid_side"`` — see :func:`wavelet2vec.character.apply_character`).
     """
     channels = _as_channels(waveform)
     n_samples = channels.shape[1]
@@ -70,6 +77,7 @@ def perform(
                 transfer_spectrum=transfer_spectrum,
                 transfer_envelope=transfer_envelope,
                 max_gain_db=max_gain_db,
+                channel_mode=channel_mode,
             )
         else:
             processed = apply_character(
@@ -80,6 +88,7 @@ def perform(
                 transfer_spectrum=transfer_spectrum,
                 transfer_envelope=transfer_envelope,
                 max_gain_db=max_gain_db,
+                channel_mode=channel_mode,
             )
         if volume_adsr is not None:
             processed = apply_adsr_volume(processed, sample_rate, volume_adsr)

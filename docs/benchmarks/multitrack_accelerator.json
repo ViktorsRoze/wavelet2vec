@@ -1,0 +1,18 @@
+{
+  "scope": "Generated 192 kHz float32 multitrack CUDA update/resume/evaluation smoke only.",
+  "implementation": "beddd94e671065e41065809be305b37ca12e6b3f95c4b786b685fcf7f794c4fc",
+  "cuda_available": true,
+  "device": "NVIDIA GeForce GTX 1050 Ti",
+  "sample_rate": 192000,
+  "dtype": "float32",
+  "exact_metrics_resume": false,
+  "max_parameter_resume_difference": 9.423766655913823e-09,
+  "loss": 0.02685746835777536,
+  "gradient_norm": 0.11407005041837692,
+  "macro_group_loss": {
+    "model": 0.02888029022142291,
+    "equal_split": 0.028837142046540976,
+    "mixture_copy": 0.05053739156574011,
+    "silence": 0.02913804678246379
+  }
+}

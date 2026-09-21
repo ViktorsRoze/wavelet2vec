@@ -1,0 +1,62 @@
+{
+  "scope": "Small float32 CPU/CUDA source-decoder parity and gradient checks; not high-resolution perceptual qualification.",
+  "implementation": "3cf8fd3fb1104f54107085fce832e1a84b1729573de04b52ec8a1b7af7d5fdbd",
+  "cuda_available": true,
+  "runs": [
+    {
+      "backend": "wavelet",
+      "sample_rate": 48000,
+      "max_absolute_difference": 9.499490261077881e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "wavelet",
+      "sample_rate": 96000,
+      "max_absolute_difference": 8.940696716308594e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "compact_wavelet",
+      "sample_rate": 48000,
+      "max_absolute_difference": 7.450580596923828e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "compact_wavelet",
+      "sample_rate": 96000,
+      "max_absolute_difference": 8.195638656616211e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "stft",
+      "sample_rate": 48000,
+      "max_absolute_difference": 5.960464477539063e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "stft",
+      "sample_rate": 96000,
+      "max_absolute_difference": 4.470348358154297e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "wavelet",
+      "sample_rate": 192000,
+      "max_absolute_difference": 8.568167686462402e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "compact_wavelet",
+      "sample_rate": 192000,
+      "max_absolute_difference": 8.940696716308594e-08,
+      "finite_gradients": true
+    },
+    {
+      "backend": "stft",
+      "sample_rate": 192000,
+      "max_absolute_difference": 5.960464477539063e-08,
+      "finite_gradients": true
+    }
+  ],
+  "device": "NVIDIA GeForce GTX 1050 Ti"
+}

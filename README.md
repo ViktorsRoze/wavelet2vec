@@ -1,5 +1,96 @@
 # wavelet2vec
 
+**v0.33.0 adds verified multitrack training and resume.** Aligned mixtures and
+stems retain native rates/precision, explicit silence versus missing labels,
+group isolation and checked additive targets. A supervised optimizer runner
+and held-out diagnostic reports complete the reference training workflow.
+See [multitrack training](docs/SUPERVISED_MULTITRACK.md); real-music perceptual
+quality remains unevaluated.
+
+**High-resolution target: up to 192 kHz, 32-bit floating-point audio.**
+[The format contract](docs/HIGH_RESOLUTION_AUDIO.md) covers native-rate
+ingestion, model I/O, explicit float WAV export and current numerical tests.
+
+**v0.32.0 adds trainable source synthesis.** Complex masks on physical carrier
+grids, an optional waveform residual and a supervised separator connect
+features to source waveforms. Offline overlap-add inference and coefficient
+consistency projection have numerical tests, including 48/96 kHz identity
+checks. See [source synthesis](docs/SOURCE_SYNTHESIS.md). Synthetic learning
+results do not establish real-music separation or high-resolution quality.
+
+**v0.31.0 adds verified real-audio corpora and diagnostic evaluation.**
+Explicit source groups, decoded-audio duplicate checks, deterministic crops and
+checkpointed data cursors connect recordings to training. Evaluation includes
+training means, zero-input and global-path ablations, and a corrupted-audio
+neighbor baseline, with group-wise reporting. See
+[real-audio pretraining](docs/REAL_AUDIO_PRETRAINING.md). These tools do not
+establish semantic music quality or infer valid grouping automatically.
+
+**v0.30.0 adds optional frozen target calibration.** It balances masked
+teacher features using training-only statistics and preserves them in
+checkpoints. A matched three-seed toy comparison improved average raw acoustic
+error, but only one seed beat a constant baseline; the option remains disabled
+by default. See [target calibration](docs/TARGET_CALIBRATION.md).
+
+**v0.29.0 adds learned temporal context and masked acoustic pretraining.**
+The new hierarchy combines local attention with global summary attention.
+Masked student views are built from corrupted audio, with detached clean
+targets kept separate. A reference trainer supplies scheduling, accumulation,
+gradient checks and checkpoint resume. The first toy experiment did not beat
+a constant baseline; semantic music quality remains unproven. See
+[self-supervised music](docs/SELF_SUPERVISED_MUSIC.md).
+
+**v0.28.0 adds stereo/multi-resolution adapters, source training utilities
+and versioned inference caches.** These compose with sliding-window extraction
+while retaining the primary synthesis carrier. See
+[adapters and training](docs/ADAPTERS_AND_TRAINING.md) for usage and contracts.
+[The gap analysis](docs/MUSIC_REPRESENTATION_GAPS.md) explains why those front
+ends alone were insufficient and motivated the initial v0.29.0 context model.
+
+**v0.27.0 adds long-audio extraction.** `SlidingHybridEncoder` reads overlapping
+context windows, emits each token once, aligns global phase/time references,
+and exposes real context availability. File/reader iterators avoid loading
+whole recordings onto the GPU; coarse duration-weighted summaries prepare
+multiple context scales. This is infrastructure for musical-context models,
+not a demonstrated understanding model. See [long audio](docs/LONG_AUDIO.md)
+and [feature priorities](docs/FEATURE_PRIORITIES.md).
+
+**v0.26.0 adds compact multirate wavelet carriers.**
+Use `HybridConfig(backend="compact_wavelet")` to retain complex bands on
+their own sample grids while preserving waveform reconstruction. Grouped
+FFTs reduced coefficient storage by 10.4x versus the dense wavelet reference
+in the measured one-second stereo case. The STFT comparator remains cheaper;
+these are engineering results, not a separation-quality claim.
+See [compact wavelets, benchmarks and limitations](docs/COMPACT_WAVELETS.md).
+
+**v0.25.0: a phase-preserving hybrid foundation for music models.**
+
+`HybridAudioFrontend` retains native-rate multichannel waveforms and full
+complex wavelet or STFT coefficients with a defined differentiable inverse.
+`HybridTokenEncoder` learns aligned waveform/spectral tokens while keeping
+those carriers available for synthesis. The tokens are lossy; the retained
+carriers preserve phase, polarity, channel identity and signal level.
+
+Start with [the hybrid encoding guide](docs/HYBRID_ENCODING.md) for the API,
+reconstruction contract, memory limits and reproducible learning experiment.
+Hybrid input is a research direction, not a demonstrated best encoding or
+a pretrained stem separator. Initial synthetic ablations did not establish
+a consistent advantage from combining the branches.
+
+```python
+import torch
+from wavelet2vec import HybridConfig, HybridTokenEncoder
+
+encoder = HybridTokenEncoder(HybridConfig(sample_rate=44100), channels=2)
+result = encoder(torch.randn(1, 2, 4410) * 0.1)
+tokens = result.tokens                          # compact, lossy model features
+reconstructed = result.encoding.synthesize()   # inverse of full coefficients
+```
+
+The deterministic retrieval API below remains available. `Wavelet2Vec`
+embeddings and the older `coeff_image` / `WaveletFrontend` pooled images are
+recognition features, **not lossless audio encodings**.
+
 **Deterministic, phase-aware musical embeddings for short audio snippets.**
 
 `wavelet2vec` turns an audio snippet (a drum hit, a synth stab, a texture, a one-shot)
@@ -298,6 +389,49 @@ patterns), embedded WAV cue markers from Sound Forge / Edison / FL slicing
 (`--slice cues`), a marker file (`--slice markers`), or onset detection
 (`--slice onsets`). The full workflow guide is in
 [docs/WORKFLOW.md](docs/WORKFLOW.md).
+
+## Beyond embeddings: musical understanding & editing
+
+The library grew a deterministic, CPU-only toolkit for *understanding* and
+*editing* sounds — the same invertible wavelet frame underneath, so every
+edit inverts back to audio exactly. All validated on real audio (see
+[`docs/FINDINGS.md`](docs/FINDINGS.md)) and covered in
+[`docs/API.md`](docs/API.md).
+
+```python
+import wavelet2vec as w
+
+# Rhythm & groove
+bpm, conf = w.estimate_tempo(loop, sr)                 # no BPM required
+profile  = w.analyze_rhythm(loop, sr, bpm=bpm)         # swing, microtiming, pattern
+swung    = w.apply_groove(loop, sr, bpm, w.swing_offsets(2/3, bpm))
+groove   = w.rhythm_embedding(loop, sr, bpm=bpm)       # 89-dim, tempo-normalized
+
+# Harmony, melody, structure
+key      = w.estimate_key(loop, sr)                    # KeyEstimate(name, confidence)
+notes    = w.segment_notes(w.track_f0(audio, sr))      # MIDI note events
+loop_pts = w.find_loop_points(audio, sr, min_loop_s=1.9)   # seamless loop points
+
+# Spatial design (mono downmix preserved to ~300 dB)
+wide     = w.design_width(mono_or_stereo, sr, 0.3, coherence_floor=0.2)
+
+# Lossless spectral editing — process only a time × frequency region
+regions  = [(0.3, 0.6, 1400.0, 2800.0)]                # (start_s, end_s, f_lo, f_hi)
+ducked   = w.process_regions(audio, sr, regions, lambda x: x * 0.25)
+flipped  = w.phase_rotate_regions(audio, sr, regions, 180.0)
+
+# Separation (exact: harmonic + percussive == input)
+harmonic, percussive = w.hpss(audio, sr)
+
+# GPU / batched analysis — same coefficients, ~9× the numpy loop on CPU
+coeffs, spec = w.analyze_batch(fragments, sr, device="cuda")   # [B, N] -> [B, bands, N]
+```
+
+Complete: tempo/groove (R-1..R-8), f0/key/chords/structure/loops (H-1..H-4),
+spatial character & width (M-2..M-6), HPSS & transient design (P-1, G-7),
+region-based spectral & phase editing, and a torch/CUDA frame backend (C-3).
+The learned "imagination axes" (imagine highs, transient creation, tonality)
+and vision models are the next tier — see the [roadmap](docs/ROADMAP.md).
 
 ## Audio quality
 

@@ -21,6 +21,7 @@ def blend(
     transfer_spectrum: bool = True,
     transfer_envelope: bool = True,
     max_gain_db: float = 24.0,
+    channel_mode: str = "shared",
 ) -> tuple[np.ndarray, int]:
     """Creates a new sound perceptually between several reference sounds.
 
@@ -37,6 +38,10 @@ def blend(
     Because the blend includes the carrier at its own weight, weights of
     ``[1, 0, 0]`` return the carrier unchanged, and increasing a reference's
     weight moves the result monotonically toward it.
+
+    ``channel_mode`` controls how a multichannel carrier is matched
+    (``"shared"`` / ``"per_channel"`` / image-preserving ``"mid_side"`` —
+    see :func:`wavelet2vec.character.apply_character`).
 
     Returns ``(waveform [channels, samples], sample_rate)`` — the carrier's
     shape and rate.
@@ -68,6 +73,7 @@ def blend(
         transfer_spectrum=transfer_spectrum,
         transfer_envelope=transfer_envelope,
         max_gain_db=max_gain_db,
+        channel_mode=channel_mode,
     )
     return result, output_sr
 

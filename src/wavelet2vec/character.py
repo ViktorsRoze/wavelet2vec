@@ -36,7 +36,12 @@ def _smooth(values: np.ndarray, window: int) -> np.ndarray:
     if window <= 1:
         return values
     kernel = np.ones(window) / window
-    return np.convolve(values, kernel, mode="same")
+    smoothed = np.convolve(values, kernel, mode="same")
+    # Normalize by the kernel coverage so the edges aren't damped (a plain
+    # 'same' convolution halves the very first/last samples of every gain
+    # curve — audible as a dip on each processed snippet's attack).
+    coverage = np.convolve(np.ones_like(values), kernel, mode="same")
+    return smoothed / coverage
 
 
 @dataclass(frozen=True)
@@ -153,6 +158,7 @@ def apply_character(
     transfer_spectrum: bool = True,
     transfer_envelope: bool = True,
     max_gain_db: float = 24.0,
+    channel_mode: str = "shared",
 ) -> np.ndarray:
     """Pulls ``source`` toward ``character`` by ``amount``.
 
@@ -163,6 +169,19 @@ def apply_character(
     the source's phase, the crossfade interpolates the character smoothly
     without comb artifacts.
 
+    ``channel_mode`` decides how multichannel sources are matched (M-6):
+
+    - ``"shared"`` (default): one gain set from the channel mixdown, applied
+      identically to every channel — inter-channel ratios are untouched, so
+      the stereo image cannot move, but the Side content is matched with
+      Mid-dominated gains.
+    - ``"per_channel"``: every channel is matched independently with its own
+      gain curves — the strongest character match; channels converge toward
+      the reference, which can narrow the image.
+    - ``"mid_side"``: stereo only; the Mid and Side signals are matched
+      independently — image-preserving per-axis matching: the mono downmix
+      of the result is exactly the morphed Mid, and L/R stay symmetric.
+
     The source's fine structure (pitch, waveshape, micro-detail) is preserved;
     only the spectral envelope and temporal envelope move. Returns a waveform
     with the source's shape and sample rate.
@@ -171,6 +190,30 @@ def apply_character(
     original_peak = np.abs(channels).max()
     if original_peak <= 1e-8:
         return channels.astype(np.float32)
+
+    if channel_mode not in ("shared", "per_channel", "mid_side"):
+        raise ValueError(f"Unknown channel_mode {channel_mode!r}.")
+    if channel_mode != "shared" and channels.shape[0] > 1:
+        forwarded = dict(
+            transfer_spectrum=transfer_spectrum,
+            transfer_envelope=transfer_envelope,
+            max_gain_db=max_gain_db,
+            channel_mode="shared",
+        )
+        if channel_mode == "per_channel":
+            return np.concatenate(
+                [
+                    apply_character(plane, source_sr, character, amount, **forwarded)
+                    for plane in channels
+                ]
+            )
+        if channels.shape[0] != 2:
+            raise ValueError("channel_mode='mid_side' requires stereo [2, N] audio.")
+        mid = (channels[0] + channels[1]) / 2.0
+        side = (channels[0] - channels[1]) / 2.0
+        mid_out = apply_character(mid, source_sr, character, amount, **forwarded)[0]
+        side_out = apply_character(side, source_sr, character, amount, **forwarded)[0]
+        return np.stack([mid_out + side_out, mid_out - side_out]).astype(np.float32)
 
     if not np.isscalar(amount):
         envelope = np.clip(np.asarray(amount, dtype=np.float64).reshape(-1), 0.0, 1.0)

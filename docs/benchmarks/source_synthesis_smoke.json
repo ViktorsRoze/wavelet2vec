@@ -1,0 +1,208 @@
+{
+  "scope": "Generated 8 kHz register-separated tones with fixed source pans; pipeline/learning smoke only, not real-music quality.",
+  "implementation": "3cf8fd3fb1104f54107085fce832e1a84b1729573de04b52ec8a1b7af7d5fdbd",
+  "steps": 60,
+  "seed": 7,
+  "train_seed": 105,
+  "validation_seed": 206,
+  "source_order": [
+    "low",
+    "high"
+  ],
+  "training_examples": 24,
+  "validation_examples": 8,
+  "sample_rate": 8192,
+  "samples": 1024,
+  "torch": "2.11.0+cu126",
+  "runs": [
+    {
+      "backend": "wavelet",
+      "frontend": {
+        "version": "hybrid-v2",
+        "sample_rate": 8192,
+        "backend": "wavelet",
+        "n_bands": 24,
+        "f_min": 40,
+        "f_max": null,
+        "q": 2,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 128,
+        "hop_length": 32,
+        "n_fft": 256,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "synthesis": {
+        "version": "source-synthesis-v1",
+        "source_names": [
+          "low",
+          "high"
+        ],
+        "channels": 2,
+        "dim": 24,
+        "waveform_residual": true,
+        "max_output_bytes": 268435456
+      },
+      "context": {
+        "version": "music-context-v1",
+        "dim": 24,
+        "heads": 2,
+        "local_layers": 1,
+        "global_layers": 1,
+        "local_tokens": 8,
+        "feedforward_multiplier": 4,
+        "dropout": 0,
+        "min_period_seconds": 0.04,
+        "max_period_seconds": 600.0,
+        "max_groups": 512,
+        "max_attention_elements": 67108864
+      },
+      "parameters": 33136,
+      "elapsed_seconds": 2.4028996000415646,
+      "first_training_loss": 0.03962598368525505,
+      "last_training_loss": 0.0036157488357275724,
+      "last_gradient_norm": 0.35298922657966614,
+      "validation_loss": 0.00326755503192544,
+      "equal_split_validation_loss": 0.039853785187006,
+      "validation_source_snr_db": [
+        24.894756317138672,
+        23.923526763916016
+      ],
+      "equal_split_source_snr_db": [
+        3.1865506172180176,
+        2.775418996810913
+      ],
+      "chunked_finite": true,
+      "chunk_vs_full_mean_absolute_difference": 0.0004935904871672392
+    },
+    {
+      "backend": "compact_wavelet",
+      "frontend": {
+        "version": "hybrid-v2",
+        "sample_rate": 8192,
+        "backend": "compact_wavelet",
+        "n_bands": 24,
+        "f_min": 40,
+        "f_max": null,
+        "q": 2,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 128,
+        "hop_length": 32,
+        "n_fft": 256,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "synthesis": {
+        "version": "source-synthesis-v1",
+        "source_names": [
+          "low",
+          "high"
+        ],
+        "channels": 2,
+        "dim": 24,
+        "waveform_residual": true,
+        "max_output_bytes": 268435456
+      },
+      "context": {
+        "version": "music-context-v1",
+        "dim": 24,
+        "heads": 2,
+        "local_layers": 1,
+        "global_layers": 1,
+        "local_tokens": 8,
+        "feedforward_multiplier": 4,
+        "dropout": 0,
+        "min_period_seconds": 0.04,
+        "max_period_seconds": 600.0,
+        "max_groups": 512,
+        "max_attention_elements": 67108864
+      },
+      "parameters": 33136,
+      "elapsed_seconds": 4.533695899997838,
+      "first_training_loss": 0.03962598368525505,
+      "last_training_loss": 0.0035235658288002014,
+      "last_gradient_norm": 0.36016198992729187,
+      "validation_loss": 0.0033847379963845015,
+      "equal_split_validation_loss": 0.039853785187006,
+      "validation_source_snr_db": [
+        23.96772003173828,
+        24.335229873657227
+      ],
+      "equal_split_source_snr_db": [
+        3.1865506172180176,
+        2.775418996810913
+      ],
+      "chunked_finite": true,
+      "chunk_vs_full_mean_absolute_difference": 0.0004946007393300533
+    },
+    {
+      "backend": "stft",
+      "frontend": {
+        "version": "hybrid-v2",
+        "sample_rate": 8192,
+        "backend": "stft",
+        "n_bands": 24,
+        "f_min": 40,
+        "f_max": null,
+        "q": 2,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 128,
+        "hop_length": 32,
+        "n_fft": 256,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "synthesis": {
+        "version": "source-synthesis-v1",
+        "source_names": [
+          "low",
+          "high"
+        ],
+        "channels": 2,
+        "dim": 24,
+        "waveform_residual": true,
+        "max_output_bytes": 268435456
+      },
+      "context": {
+        "version": "music-context-v1",
+        "dim": 24,
+        "heads": 2,
+        "local_layers": 1,
+        "global_layers": 1,
+        "local_tokens": 8,
+        "feedforward_multiplier": 4,
+        "dropout": 0,
+        "min_period_seconds": 0.04,
+        "max_period_seconds": 600.0,
+        "max_groups": 512,
+        "max_attention_elements": 67108864
+      },
+      "parameters": 69256,
+      "elapsed_seconds": 1.8246764999930747,
+      "first_training_loss": 0.03962598368525505,
+      "last_training_loss": 0.0036716382019221783,
+      "last_gradient_norm": 0.26860472559928894,
+      "validation_loss": 0.0032610029447823763,
+      "equal_split_validation_loss": 0.039853785187006,
+      "validation_source_snr_db": [
+        24.5660400390625,
+        24.11174774169922
+      ],
+      "equal_split_source_snr_db": [
+        3.1865506172180176,
+        2.775418996810913
+      ],
+      "chunked_finite": true,
+      "chunk_vs_full_mean_absolute_difference": 0.0004382479237392545
+    }
+  ]
+}

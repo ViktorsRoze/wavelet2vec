@@ -1,5 +1,9 @@
 # Trainable source synthesis — v0.32.0
 
+**v0.34.0 update:** [Bounded rendering](BOUNDED_RENDERING.md) now provides
+reader/file streaming with rolling overlap buffers. `separate_audio` uses
+that same core while retaining its full-tensor convenience interface.
+
 **v0.33.0 update:** [Verified multitrack training](SUPERVISED_MULTITRACK.md)
 now implements the aligned-stem loader, supervised optimizer/resume recipe
 and held-out crop diagnostics listed as next steps below. Real-music and

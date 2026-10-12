@@ -234,13 +234,8 @@ def separate_audio(model: HybridSeparator, audio: torch.Tensor, *, window_sample
     fixed by the model; arbitrary instrument-instance tracking is not provided.
     Individual module training modes are restored, including on exceptions.
     """
-    hop = model.encoder.frontend.config.hop_length
-    for name, value in (("window_samples", window_samples), ("overlap_samples", overlap_samples),
-                        ("context_samples", context_samples)):
-        if isinstance(value, bool) or not isinstance(value, int) or value < 0 or value % hop:
-            raise ValueError(f"{name} must be nonnegative and aligned to hop_length")
-    if window_samples <= 0 or overlap_samples >= window_samples:
-        raise ValueError("require 0 <= overlap_samples < window_samples")
+    from wavelet2vec.rendering import SourceRenderConfig, iter_separate_reader
+    config = SourceRenderConfig(window_samples, overlap_samples, context_samples)
     if isinstance(sample_origin, bool) or not isinstance(sample_origin, int):
         raise ValueError("sample_origin must be an integer")
     if (not isinstance(audio, torch.Tensor) or audio.ndim != 3 or min(audio.shape) <= 0
@@ -248,26 +243,11 @@ def separate_audio(model: HybridSeparator, audio: torch.Tensor, *, window_sample
         raise ValueError("audio must be nonempty [B,model channels,N]")
     if audio.dtype != model.decoder.mask_head.weight.dtype or audio.device != model.decoder.mask_head.weight.device:
         raise ValueError("model and audio must share dtype and device")
-    modes = [(module, module.training) for module in model.modules()]
     b, c, n = audio.shape
     result = audio.new_zeros(b, len(model.config.source_names), c, n)
-    denominator = audio.new_zeros(n)
-    try:
-        model.eval()
-        for start in range(0, n, window_samples - overlap_samples):
-            end = min(n, start + window_samples)
-            left, right = max(0, start - context_samples), min(n, end + context_samples)
-            predicted = model(audio[..., left:right], sample_origin=sample_origin + left, branches=branches)
-            core = predicted.waveform[..., start-left:end-left]
-            phase = (torch.arange(end-start, device=audio.device, dtype=audio.dtype) + .5) / (end-start)
-            weights = torch.sin(torch.pi * phase).square()
-            result[..., start:end] += core * weights
-            denominator[start:end] += weights
-            if end == n:
-                break
-        result = result / denominator
-    finally:
-        for module, training in modes:
-            module.training = training
+    for chunk in iter_separate_reader(model, lambda lo, hi: audio[..., lo:hi], n, config,
+                                      sample_origin=sample_origin, branches=branches):
+        start = chunk.sample_origin-sample_origin
+        result[..., start:start+chunk.waveform.shape[-1]] = chunk.waveform
     return SourceSynthesis(result, torch.full((b,), n, device=audio.device, dtype=torch.long),
                            model.config.source_names, model.encoder.frontend.config.sample_rate, sample_origin)

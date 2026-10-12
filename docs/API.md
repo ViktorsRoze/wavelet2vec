@@ -1,5 +1,10 @@
 # wavelet2vec — API Reference
 
+v0.34.0 adds `SourceRenderConfig`, `iter_separate_reader`, `separate_file`,
+`FileSeparationResult` and `SeparationCancelled`.
+[BOUNDED_RENDERING.md](BOUNDED_RENDERING.md) defines rolling audio buffers,
+native float WAV/RF64 export, cancellation and staged publication.
+
 v0.33.0 adds `MultitrackRecord`, `MultitrackManifest`, `MultitrackWindow`,
 `MultitrackDataset`, `collate_multitracks`, `SeparationRunConfig`,
 `SeparationTrainingRun` and `evaluate_separation`.

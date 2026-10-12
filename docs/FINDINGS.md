@@ -1,5 +1,12 @@
 # Verified Findings — lab notebook
 
+**2026-09-22, v0.34.0:** [Bounded rendering](BOUNDED_RENDERING.md) avoids
+retaining full input/output recordings in the file path. Generated 192 kHz
+signals of 0.25 and 10 seconds use the same maximum model-window length;
+initialized stem sums reconstruct within `5e-7` peak error. This validates
+rendering mechanics, not separation quality. See the
+[validation record](benchmarks/BOUNDED_RENDER_VALIDATION.md).
+
 **2026-09-21, v0.33.0:** [Verified multitrack training](SUPERVISED_MULTITRACK.md)
 checks aligned targets, full-recording declared additivity and reused source
 assets across groups. CPU resume reproduces next crops/loss/weights at

@@ -1,5 +1,11 @@
 # wavelet2vec
 
+**v0.34.0 adds bounded file-to-file source rendering.** Native floating-point
+audio is processed with rolling overlap buffers, cancellation, staged stem
+publication and RF64 for large outputs. The same core serves tensor inference.
+See [bounded rendering](docs/BOUNDED_RENDERING.md) for memory limits and
+dataset-independent validation at 192 kHz.
+
 **v0.33.0 adds verified multitrack training and resume.** Aligned mixtures and
 stems retain native rates/precision, explicit silence versus missing labels,
 group isolation and checked additive targets. A supervised optimizer runner

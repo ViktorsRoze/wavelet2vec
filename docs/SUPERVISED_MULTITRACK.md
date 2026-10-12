@@ -1,5 +1,9 @@
 # Verified multitrack training — v0.33.0
 
+**v0.34.0 update:** [Bounded file rendering](BOUNDED_RENDERING.md) is now
+available independently of the crop evaluator described below. Full-song
+perceptual evaluation still requires appropriate musical examples.
+
 21 September 2026. The source-synthesis model now has a verified aligned-stem
 dataset, supervised optimizer/checkpoint runner and held-out diagnostic
 evaluation. Native stereo through **192 kHz / float32** remains a required

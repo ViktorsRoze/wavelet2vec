@@ -1,5 +1,9 @@
 # High-resolution audio contract
 
+**v0.34.0:** [Bounded rendering](BOUNDED_RENDERING.md) now streams native
+192 kHz float32 file inputs to completed stem files, with explicit FLOAT or
+DOUBLE export, no integer fallback, and RF64 selection for large outputs.
+
 21 September 2026: **192,000 samples/second, 32-bit floating-point audio is a
 required target** for wavelet2vec, including stereo. Lower native rates remain
 supported. Choosing a different rate or precision must be explicit; the

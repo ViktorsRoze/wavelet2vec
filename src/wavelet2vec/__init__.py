@@ -209,9 +209,14 @@ from wavelet2vec.multitrack import (
 )
 from wavelet2vec.separation_training import SeparationRunConfig, SeparationTrainingRun, evaluate_separation
 
-__version__ = "0.33.0"
+from wavelet2vec.rendering import (
+    SourceRenderConfig, SeparationCancelled, FileSeparationResult, iter_separate_reader, separate_file,
+)
+
+__version__ = "0.34.0"
 
 __all__ = [
+    "SourceRenderConfig", "SeparationCancelled", "FileSeparationResult", "iter_separate_reader", "separate_file",
     "MultitrackRecord", "MultitrackManifest", "MultitrackWindow", "MultitrackDataset", "collate_multitracks",
     "SeparationRunConfig", "SeparationTrainingRun", "evaluate_separation",
     "SynthesisConfig", "SourceSynthesis", "HybridSourceDecoder", "HybridSeparator",

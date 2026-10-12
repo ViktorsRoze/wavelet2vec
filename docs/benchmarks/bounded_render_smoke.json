@@ -1,0 +1,40 @@
+{
+  "scope": "Generated signal, initialized equal-split model, float32 file-render correctness and bounded windows only.",
+  "implementation": "b2acfbfac97663953ef2fb84874da463dc3153d621347552ea7f1d3241d6c505",
+  "sample_rate": 192000,
+  "dtype": "float32",
+  "render": {
+    "version": "source-render-v1",
+    "window_samples": 8192,
+    "overlap_samples": 2048,
+    "context_samples": 512,
+    "max_buffer_bytes": 268435456
+  },
+  "estimated_render_buffer_bytes": 1146880,
+  "runs": [
+    {
+      "seconds": 0.25,
+      "frames": 48000,
+      "elapsed_seconds": 0.17815180006437004,
+      "calls": 8,
+      "maximum_model_samples": 9216,
+      "maximum_emitted_samples": 6144,
+      "summed_source_max_error": 2.384185791015625e-07,
+      "summed_source_snr_db": 133.51181641003595,
+      "source_bytes": 384088,
+      "output_bytes": 768176
+    },
+    {
+      "seconds": 10.0,
+      "frames": 1920000,
+      "elapsed_seconds": 6.185865300009027,
+      "calls": 313,
+      "maximum_model_samples": 9216,
+      "maximum_emitted_samples": 6144,
+      "summed_source_max_error": 4.76837158203125e-07,
+      "summed_source_snr_db": 133.47836343439133,
+      "source_bytes": 15360088,
+      "output_bytes": 30720176
+    }
+  ]
+}

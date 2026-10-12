@@ -460,6 +460,13 @@ optimizer state, random-generator states and training records (see below).
   size.
 - **Links:** `?run=morph/v1` (or any run name) opens a specific run.
 
+## A diffusion approach
+
+[MORPH_DIFFUSION.md](MORPH_DIFFUSION.md): stage 0 tests whether a diffusion
+model with composable vox/synth guidance gives more realistic, more two-sided
+hybrids than MorphNet-L, with per-frame α. It has go/no-go criteria. It trains
+a 245 M-parameter Swin-L denoiser on the CPU and is paused after epoch 3 of 10.
+
 ## Limits to keep in mind
 
 - **"Voice" rests on two voices.** The leave-one-singer-out check says how

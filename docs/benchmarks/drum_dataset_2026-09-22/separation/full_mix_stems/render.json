@@ -1,0 +1,57 @@
+{
+  "version": "source-file-render-v1",
+  "source_sha256": "86d8ed06590a2a58a81219e7b32a3ad5b2f3d12f028f446dd2e2f9b1cccc68b1",
+  "source_name": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell.wav",
+  "model": "0bcf22af9c4403c6e857ee17028b17b1754f2f3df7b8efda730cd2c8ea7bbbcb",
+  "render": {
+    "version": "source-render-v1",
+    "window_samples": 16384,
+    "overlap_samples": 4096,
+    "context_samples": 2048,
+    "max_buffer_bytes": 268435456
+  },
+  "branches": "both",
+  "sample_rate": 44100,
+  "channels": 2,
+  "frames": 338717,
+  "subtype": "FLOAT",
+  "container": "WAV",
+  "provenance": {
+    "bundle_id": "69b2629a459ce8bb00dfc5732a0d17a3290edab6606d7b4fc1b7170502945f0d",
+    "scope": "same-performance trained example, master-processed mix, solo-reference targets"
+  },
+  "sources": [
+    {
+      "name": "kick_drum",
+      "file": "source_000.wav"
+    },
+    {
+      "name": "snare",
+      "file": "source_001.wav"
+    },
+    {
+      "name": "clap",
+      "file": "source_002.wav"
+    },
+    {
+      "name": "open_hihat",
+      "file": "source_003.wav"
+    },
+    {
+      "name": "tom",
+      "file": "source_004.wav"
+    },
+    {
+      "name": "closed_hihat",
+      "file": "source_005.wav"
+    },
+    {
+      "name": "bongos",
+      "file": "source_006.wav"
+    },
+    {
+      "name": "cow_bell",
+      "file": "source_007.wav"
+    }
+  ]
+}

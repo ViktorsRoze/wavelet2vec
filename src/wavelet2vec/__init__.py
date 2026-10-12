@@ -217,9 +217,12 @@ from wavelet2vec.inference_bundle import (
     SeparatorBundle, save_separator_bundle, load_separator_bundle, inspect_separator_bundle,
 )
 
-__version__ = "0.35.0"
+from wavelet2vec.drum_analysis import detect_percussive_events, compare_percussive_events, analyze_drum_track
+
+__version__ = "0.36.0"
 
 __all__ = [
+    "detect_percussive_events", "compare_percussive_events", "analyze_drum_track",
     "SeparatorBundle", "save_separator_bundle", "load_separator_bundle", "inspect_separator_bundle",
     "SourceRenderConfig", "SeparationCancelled", "FileSeparationResult", "iter_separate_reader", "separate_file",
     "MultitrackRecord", "MultitrackManifest", "MultitrackWindow", "MultitrackDataset", "collate_multitracks",

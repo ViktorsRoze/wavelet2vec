@@ -1,5 +1,12 @@
 # Verified Findings — lab notebook
 
+**2026-09-23, v0.36.0:** [Real drum-substem findings](DRUM_DATASET_FINDINGS.md)
+record 212 automatically detected solo events, native-rate supervised runs
+and source-level failures. The Q8/96-band model improves complete-mix raw
+development loss about 25.3% versus Q2/32 bands, with higher parameter count.
+Quiet drums still approach or fall below the silence baseline. A preliminary
+kick-pitch claim was corrected after widening nuisance timing alignment.
+
 **2026-09-22, v0.35.0:** [Inference bundles](INFERENCE_BUNDLES.md) preserve
 CPU predictions exactly across all three backends in float32/float64 tests,
 with CUDA loading checked within tolerance. Artifact validation and native

@@ -1,0 +1,1631 @@
+{
+  "scope": "Train on bars 1-3; diagnose bar 4 of the same performance. Repeated timbres/patterns and shared stems prevent independent generalization claims.",
+  "dataset": "C:\\Users\\vikto\\PycharmProjects\\wavelet2vec\\drum_substem_dataset_BPM128_4bars",
+  "original_hashes": {
+    "only_bongos.wav": "ede315a867c054e00cdf75f2579ee964e96708e77774ee2abc25ecbf4a2b49ac",
+    "only_clap.wav": "d327d57bd0b49f335f1c940966ff4a8346ce14ca89db1e0d5e6332c81b3bc304",
+    "only_closed_hihat.wav": "41fd5c8306fc0ec4026359ee3eb25a045bf202447cef9e580de8c781977a80c5",
+    "only_cow_bell.wav": "b5f5123e64235c20844b1242af22e92f5dabf26124c9584098aa2f4c31d4dbd6",
+    "only_kick_drum.wav": "17e1b1598cf1076702d88a4146f53c0953522c327471761e620cd46451d10168",
+    "only_open_hihat.wav": "29d18a19fd5a172219c8d90a70fad1585b89b247d30a7d250cdf1e8d9a7592e7",
+    "only_snare.wav": "ae8aceef153b330ff40caa65df03000d302cf8b51ba042e23a23b7a9d17b111f",
+    "only_tom.wav": "ef4d53dab0086b78f24194781f7b9da7af2d3bcd0fa670156e2f9b31457d9fbb",
+    "kick_drum+snare.wav": "ab9874018e23bd7cbe5085fc14c226aba65a70bcfa87b2c248cbfa3f87c9d12e",
+    "kick_drum+snare+clap.wav": "f6caca029e7628b3647b0343d7ceeafbe97eeb7acc673e2b5bda1bfebeb7a96b",
+    "kick_drum+snare+clap+open_hihat.wav": "35f5e235dde278ad97edbcc1fe09e7776bc5562035e20c62c6ebebf2f8ad54bc",
+    "kick_drum+snare+clap+open_hihat+tom.wav": "59cca4bff0b6e3d394064d874003e1453e90c5fef98714a9d1e8d6d7136b543f",
+    "kick_drum+snare+clap+open_hihat+tom+closed_hihat.wav": "a63bff4377e66bde71270c9ea294be022152b5e1cd110333e897c245416bdbf4",
+    "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos.wav": "42c680e5c749e2f540e497711636791785d45ebaa3f310fac0f939c1f8a1b960",
+    "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell.wav": "86d8ed06590a2a58a81219e7b32a3ad5b2f3d12f028f446dd2e2f9b1cccc68b1"
+  },
+  "native_sample_rate": 44100,
+  "original_subtype": "PCM_16",
+  "prepared_subtype": "FLOAT",
+  "source_order": [
+    "kick_drum",
+    "snare",
+    "clap",
+    "open_hihat",
+    "tom",
+    "closed_hihat",
+    "bongos",
+    "cow_bell"
+  ],
+  "train_sample_interval": [
+    0,
+    248062
+  ],
+  "evaluation_sample_interval": [
+    248062,
+    330750
+  ],
+  "omitted_tail_after_sample": 330750,
+  "additive": false,
+  "master_limiter_reported": true,
+  "seed": 17,
+  "updates": 300,
+  "elapsed_training_seconds": null,
+  "history": [],
+  "implementation": "ad91be51fa9f1566c08ab0b5202ccb87773d32bcd8de70b2c152130c24c648b7",
+  "bundle_id": "69b2629a459ce8bb00dfc5732a0d17a3290edab6606d7b4fc1b7170502945f0d",
+  "results": [
+    {
+      "mixture": "kick_drum+snare.wav",
+      "present_sources": [
+        "kick_drum",
+        "snare"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.0015941251767799258,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 7.879842243521794,
+              "waveform_l1": 0.005243863430761958,
+              "output_rms": 0.02612992099543827,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.1682726573667004,
+              "waveform_l1": 0.0009902982731044248,
+              "output_rms": 0.00035340728814063947,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": null,
+              "waveform_l1": 0.00015378075396175746,
+              "output_rms": 0.0003091184592957668,
+              "target_rms": 0.0
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.00019870841471658884,
+              "output_rms": 0.00039252591480357833,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0032491823965553005,
+              "output_rms": 0.0069030367542946445,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.00016858468101730784,
+              "output_rms": 0.00033292300292093557,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0006879468064803743,
+              "output_rms": 0.0012653543071877906,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0017887715217074077,
+              "output_rms": 0.002613523204285861,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.004023947287350893,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 1.1557323406770663,
+              "waveform_l1": 0.015571547781719881,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -1.7648217706638458,
+              "waveform_l1": 0.002713412184833373,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": null,
+              "waveform_l1": 0.0022590766565718516,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.0
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0022590766565718516,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0022590766565718516,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0022590766565718516,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0022590766565718516,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0022590766565718516,
+              "output_rms": 0.004154220489122886,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.002356961602345109,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.00014849913713987917,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 23.361263981755876,
+              "waveform_l1": 0.0005686200042262667,
+              "output_rms": 0.03279551925573225,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 6.251145785231079,
+              "waveform_l1": 0.000546750282732103,
+              "output_rms": 0.00418831481536534,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "mixture": "kick_drum+snare+clap.wav",
+      "present_sources": [
+        "clap",
+        "kick_drum",
+        "snare"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.001657841494306922,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 7.888764032036039,
+              "waveform_l1": 0.005241869476768594,
+              "output_rms": 0.02613430215335449,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.1705882322343448,
+              "waveform_l1": 0.0009903864013031873,
+              "output_rms": 0.0003529369281913929,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -0.09647295128526254,
+              "waveform_l1": 0.0005155508370446269,
+              "output_rms": 0.0003088073672369374,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.00021505670823713605,
+              "output_rms": 0.0004065517652969748,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.003249701118123307,
+              "output_rms": 0.006901536520457999,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.00017714674040882156,
+              "output_rms": 0.00033790373427227354,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0007613181056005809,
+              "output_rms": 0.0013490671263449213,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0018029747485347892,
+              "output_rms": 0.0026190993552307087,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.00406765379011631,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 1.1554810104513098,
+              "waveform_l1": 0.015574610016478843,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -1.7492102693081713,
+              "waveform_l1": 0.00272139323292871,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -8.742066842886846,
+              "waveform_l1": 0.0024857592794917316,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0022707227444501116,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0022707227444501116,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0022707227444501116,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0022707227444501116,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0022707227444501116,
+              "output_rms": 0.004158779751062286,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.002409391338005662,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.00038727961088481705,
+              "output_rms": 0.0,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.00018773830379359424,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 23.038983862766457,
+              "waveform_l1": 0.0006742174801819203,
+              "output_rms": 0.03278242708927669,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 6.984248192788895,
+              "waveform_l1": 0.0004938898647365835,
+              "output_rms": 0.004185911176901456,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 4.360461045091546,
+              "waveform_l1": 0.00023819118592780168,
+              "output_rms": 0.0012199985569359474,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "mixture": "kick_drum+snare+clap+open_hihat.wav",
+      "present_sources": [
+        "clap",
+        "kick_drum",
+        "open_hihat",
+        "snare"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.0018461489817127585,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 7.887978001288918,
+              "waveform_l1": 0.005248157338206747,
+              "output_rms": 0.026145523038566373,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.16814681125967898,
+              "waveform_l1": 0.0009943439963282423,
+              "output_rms": 0.0003544102982413103,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -0.08805704181695863,
+              "waveform_l1": 0.0005175357392380357,
+              "output_rms": 0.00031164210389218386,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.8562174743643564,
+              "waveform_l1": 0.0015231201397955686,
+              "output_rms": 0.0006534746482890888,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.003261061659309048,
+              "output_rms": 0.006908522191336162,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0002006171817061809,
+              "output_rms": 0.00035964603837079404,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0007715761627923109,
+              "output_rms": 0.0013592658237564928,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0018414737138852716,
+              "output_rms": 0.0026555551534109528,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.004338467959314585,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 1.154056650700888,
+              "waveform_l1": 0.015613647321983018,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -1.7876554851387167,
+              "waveform_l1": 0.0028414597313839583,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -8.770472704138449,
+              "waveform_l1": 0.002572659391552302,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": -2.63616981306972,
+              "waveform_l1": 0.0035376170702024878,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.002389701827207217,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.002389701827207217,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.002389701827207217,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.002389701827207217,
+              "output_rms": 0.004190313616465346,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.00261365482583642,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.00038727961088481705,
+              "output_rms": 0.0,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0015259955320564955,
+              "output_rms": 0.0,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.00030001779668964446,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 23.018310020822867,
+              "waveform_l1": 0.0007372450064192154,
+              "output_rms": 0.032777068524472694,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 6.756047048265574,
+              "waveform_l1": 0.0005158089063193966,
+              "output_rms": 0.004188309983869197,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 5.311335644813436,
+              "waveform_l1": 0.00024017759321013745,
+              "output_rms": 0.0010607428059832174,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 4.747434872778217,
+              "waveform_l1": 0.0007476686782384832,
+              "output_rms": 0.003973621270814776,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "mixture": "kick_drum+snare+clap+open_hihat+tom.wav",
+      "present_sources": [
+        "clap",
+        "kick_drum",
+        "open_hihat",
+        "snare",
+        "tom"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.0028736284002661705,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 5.874230076239569,
+              "waveform_l1": 0.007347887854038976,
+              "output_rms": 0.028268726509568097,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.12748814757322915,
+              "waveform_l1": 0.0010237230406179045,
+              "output_rms": 0.00047630943716123664,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -0.2555908154553215,
+              "waveform_l1": 0.0005696479113832377,
+              "output_rms": 0.0004481155670261154,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.8973668011632221,
+              "waveform_l1": 0.0015349177185484395,
+              "output_rms": 0.0007030532067314508,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 2.797194041862279,
+              "waveform_l1": 0.008721228879714955,
+              "output_rms": 0.013485161969938752,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.00025399704630873186,
+              "output_rms": 0.0004964664511156035,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0009485311414907192,
+              "output_rms": 0.0022567063640346434,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.002064596388025452,
+              "output_rms": 0.003242735607848721,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.006222683470696211,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 1.1119594487372133,
+              "waveform_l1": 0.016142114835442405,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -3.651416128526199,
+              "waveform_l1": 0.0036641635438975167,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -11.689897921009427,
+              "waveform_l1": 0.0034986148262540623,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": -4.625063402544819,
+              "waveform_l1": 0.004251838722280674,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 1.1155144385821179,
+              "waveform_l1": 0.011513562048367303,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0033160436310266193,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0033160436310266193,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0033160436310266193,
+              "output_rms": 0.006021259423621152,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.00419765617698431,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.00038727961088481705,
+              "output_rms": 0.0,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0015259955320564955,
+              "output_rms": 0.0,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.012536632202727138,
+              "output_rms": 0.0,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.0013395450077950954,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 10.611952032338456,
+              "waveform_l1": 0.004493562002440757,
+              "output_rms": 0.032265875842604395,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 2.5768893457991737,
+              "waveform_l1": 0.0006749774939329947,
+              "output_rms": 0.0030519199345026807,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 4.7841605434120265,
+              "waveform_l1": 0.0002572076877123523,
+              "output_rms": 0.000999538217724606,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 9.664603802452959,
+              "waveform_l1": 0.00043181554143232757,
+              "output_rms": 0.0036581789683882565,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 10.548718369101538,
+              "waveform_l1": 0.004603063858395723,
+              "output_rms": 0.031129670564554197,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "mixture": "kick_drum+snare+clap+open_hihat+tom+closed_hihat.wav",
+      "present_sources": [
+        "clap",
+        "closed_hihat",
+        "kick_drum",
+        "open_hihat",
+        "snare",
+        "tom"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.003025758545845747,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 5.879616955163681,
+              "waveform_l1": 0.007343584610017685,
+              "output_rms": 0.028274537316785836,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.1258494910554307,
+              "waveform_l1": 0.0010260248790193286,
+              "output_rms": 0.0004779473999628584,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -0.26093814688006856,
+              "waveform_l1": 0.0005715964146736938,
+              "output_rms": 0.000449407248845961,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.5600385394739001,
+              "waveform_l1": 0.0016170621598408444,
+              "output_rms": 0.000757033061486363,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 2.7970893322898776,
+              "waveform_l1": 0.008733835768046296,
+              "output_rms": 0.013484595358116875,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 0.3148990438161653,
+              "waveform_l1": 0.0012260910198216473,
+              "output_rms": 0.0005503350745797783,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0009583314137202246,
+              "output_rms": 0.0022602639349091815,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0020927573786563504,
+              "output_rms": 0.003270292864461527,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.0063367970287799835,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 1.1112027698566453,
+              "waveform_l1": 0.016167519100863868,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -3.665497663673265,
+              "waveform_l1": 0.0036945563766978473,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -11.710131029523422,
+              "waveform_l1": 0.0035247276580370615,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": -4.760049423840945,
+              "waveform_l1": 0.004327664272888526,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 1.1146523909170707,
+              "waveform_l1": 0.011528902401680547,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": -5.92788727543242,
+              "waveform_l1": 0.003849249021741259,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0033466976262836634,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0033466976262836634,
+              "output_rms": 0.0060359253352858955,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.004353725351393223,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.00038727961088481705,
+              "output_rms": 0.0,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0015259955320564955,
+              "output_rms": 0.0,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.012536632202727138,
+              "output_rms": 0.0,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0011377000587274415,
+              "output_rms": 0.0,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.0015345701249316335,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 10.6032310808704,
+              "waveform_l1": 0.004516533496999314,
+              "output_rms": 0.03225606677198322,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 2.5139832362206693,
+              "waveform_l1": 0.0006850048730091155,
+              "output_rms": 0.0030313649476516706,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 3.8602092715022494,
+              "waveform_l1": 0.00027288305309797146,
+              "output_rms": 0.0009338071538075522,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 2.3139745583274247,
+              "waveform_l1": 0.001065450677588094,
+              "output_rms": 0.0034187510554191014,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 10.473438231187004,
+              "waveform_l1": 0.004696237031660255,
+              "output_rms": 0.031118403616313323,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 5.240707324398964,
+              "waveform_l1": 0.0006495068021807245,
+              "output_rms": 0.002482788016328312,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "mixture": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos.wav",
+      "present_sources": [
+        "bongos",
+        "clap",
+        "closed_hihat",
+        "kick_drum",
+        "open_hihat",
+        "snare",
+        "tom"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.005723237991333008,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 5.6659317308904935,
+              "waveform_l1": 0.008240910562107042,
+              "output_rms": 0.028524124815566654,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.13317244541855291,
+              "waveform_l1": 0.0011210361254355933,
+              "output_rms": 0.0007462249809166605,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -0.6430083667120645,
+              "waveform_l1": 0.0006505578057250923,
+              "output_rms": 0.0006644337289295643,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.32641685718563845,
+              "waveform_l1": 0.0016933649528048376,
+              "output_rms": 0.0008816783161710402,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 2.5839806822493054,
+              "waveform_l1": 0.009493826566695321,
+              "output_rms": 0.013482080866366184,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 0.3595330199938329,
+              "waveform_l1": 0.0012531200686368264,
+              "output_rms": 0.0008294917570819951,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 3.661702951879278,
+              "waveform_l1": 0.016054378575778728,
+              "output_rms": 0.026189699480302007,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.005996796692868765,
+              "output_rms": 0.014854665424573822,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.010768982581794262,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.8257623423891641,
+              "waveform_l1": 0.01752711170505813,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -6.630311595070467,
+              "waveform_l1": 0.005716323921739501,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -15.634093751728004,
+              "waveform_l1": 0.005532322076636571,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": -8.002853523224164,
+              "waveform_l1": 0.006160934850711941,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 0.8506337886796027,
+              "waveform_l1": 0.013115196981850792,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": -9.44667916947202,
+              "waveform_l1": 0.005691855984391074,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 1.1062971997100637,
+              "waveform_l1": 0.02489863873543016,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0054414775395541,
+              "output_rms": 0.0096198044190277,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.007891278713941574,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.00038727961088481705,
+              "output_rms": 0.0,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0015259955320564955,
+              "output_rms": 0.0,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.012536632202727138,
+              "output_rms": 0.0,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0011377000587274415,
+              "output_rms": 0.0,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.027557048819751562,
+              "output_rms": 0.0,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.0025181788951158524,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 9.825160936198733,
+              "waveform_l1": 0.005084323926948495,
+              "output_rms": 0.030867287803811948,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 1.1951639388441506,
+              "waveform_l1": 0.0007991189404922568,
+              "output_rms": 0.0014895806571267624,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.3490891126593141,
+              "waveform_l1": 0.00037282202802093787,
+              "output_rms": 0.0003334710212745014,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 1.821062891592831,
+              "waveform_l1": 0.0012277739145398594,
+              "output_rms": 0.0027052577965948313,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 8.536688825809,
+              "waveform_l1": 0.005743988721046971,
+              "output_rms": 0.027564553939373054,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 2.013030804176787,
+              "waveform_l1": 0.0009272904146439686,
+              "output_rms": 0.0014448673840575942,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 14.705575743877379,
+              "waveform_l1": 0.005270713294446016,
+              "output_rms": 0.056863464619300835,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": null,
+              "waveform_l1": 0.0,
+              "output_rms": 0.0,
+              "target_rms": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "mixture": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell.wav",
+      "present_sources": [
+        "bongos",
+        "clap",
+        "closed_hihat",
+        "cow_bell",
+        "kick_drum",
+        "open_hihat",
+        "snare",
+        "tom"
+      ],
+      "methods": {
+        "model": {
+          "loss": 0.010366884991526604,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 4.8848364032969736,
+              "waveform_l1": 0.009902276141453444,
+              "output_rms": 0.028223678948716167,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -0.3161102871767058,
+              "waveform_l1": 0.0015514112684945,
+              "output_rms": 0.0018473775204263224,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -3.3628077238832104,
+              "waveform_l1": 0.0010855085955747824,
+              "output_rms": 0.0017494695818210094,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": -0.8059055978731025,
+              "waveform_l1": 0.0022362864865670593,
+              "output_rms": 0.002094027022855216,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 2.4698463742235512,
+              "waveform_l1": 0.010276105003745857,
+              "output_rms": 0.013351249524149995,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": -0.7508473808914385,
+              "waveform_l1": 0.0017668377640397707,
+              "output_rms": 0.001995941356943036,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 3.0630286736598267,
+              "waveform_l1": 0.020254424875422304,
+              "output_rms": 0.029170586069987636,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": 4.24326553753516,
+              "waveform_l1": 0.03331438071916987,
+              "output_rms": 0.04654484009751941,
+              "target_rms": 0.09267061861183323
+            }
+          }
+        },
+        "equal_split": {
+          "loss": 0.019622940570116043,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.21794654561777124,
+              "waveform_l1": 0.020478100253517043,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": -10.10949245673314,
+              "waveform_l1": 0.010058438976298175,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": -19.46780198935267,
+              "waveform_l1": 0.009843433120117836,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": -11.545288209132549,
+              "waveform_l1": 0.010202313747383862,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 0.25150676600080885,
+              "waveform_l1": 0.016566173556972954,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": -13.12047698505048,
+              "waveform_l1": 0.01003338652590849,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 0.9046933330108929,
+              "waveform_l1": 0.027391219771129797,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": 1.1007072270469547,
+              "waveform_l1": 0.04798223394266223,
+              "output_rms": 0.015069238371393763,
+              "target_rms": 0.09267061861183323
+            }
+          }
+        },
+        "silence": {
+          "loss": 0.014780555851757526,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.01774862380957825,
+              "output_rms": 0.0,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0009007474217252465,
+              "output_rms": 0.0,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.00038727961088481705,
+              "output_rms": 0.0,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0015259955320564955,
+              "output_rms": 0.0,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.012536632202727138,
+              "output_rms": 0.0,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.0011377000587274415,
+              "output_rms": 0.0,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.027557048819751562,
+              "output_rms": 0.0,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": 0.0,
+              "waveform_l1": 0.05355475985966969,
+              "output_rms": 0.0,
+              "target_rms": 0.09267061861183323
+            }
+          }
+        },
+        "reference_ratio_mask": {
+          "loss": 0.005143085028976202,
+          "sources": {
+            "kick_drum": {
+              "snr_db": 8.602131492293664,
+              "waveform_l1": 0.005905900027805338,
+              "output_rms": 0.026301369321197872,
+              "target_rms": 0.03292551886696976
+            },
+            "snare": {
+              "snr_db": 1.0588440618124355,
+              "waveform_l1": 0.0008205688450924121,
+              "output_rms": 0.0014114405292925964,
+              "target_rms": 0.004875180526605595
+            },
+            "clap": {
+              "snr_db": 0.4721520053778071,
+              "waveform_l1": 0.0003740752265253893,
+              "output_rms": 0.0002933449957213342,
+              "target_rms": 0.0016089504263488315
+            },
+            "open_hihat": {
+              "snr_db": 1.1681170485052308,
+              "waveform_l1": 0.0013646968306742031,
+              "output_rms": 0.0019610308185010906,
+              "target_rms": 0.004101959436369416
+            },
+            "tom": {
+              "snr_db": 7.963242354543868,
+              "waveform_l1": 0.006552622061020324,
+              "output_rms": 0.026811010620613814,
+              "target_rms": 0.03340403449178456
+            },
+            "closed_hihat": {
+              "snr_db": 1.897300872576074,
+              "waveform_l1": 0.000948141018590078,
+              "output_rms": 0.0013567762645521001,
+              "target_rms": 0.0033890083591544004
+            },
+            "bongos": {
+              "snr_db": 9.191967059511938,
+              "waveform_l1": 0.011328903621005236,
+              "output_rms": 0.05449026022221918,
+              "target_rms": 0.05972525650884294
+            },
+            "cow_bell": {
+              "snr_db": 12.760946703277114,
+              "waveform_l1": 0.012518173958494062,
+              "output_rms": 0.08838775195168488,
+              "target_rms": 0.09267061861183323
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rendered_files": [
+    "full_mix_stems\\source_000.wav",
+    "full_mix_stems\\source_001.wav",
+    "full_mix_stems\\source_002.wav",
+    "full_mix_stems\\source_003.wav",
+    "full_mix_stems\\source_004.wav",
+    "full_mix_stems\\source_005.wav",
+    "full_mix_stems\\source_006.wav",
+    "full_mix_stems\\source_007.wav"
+  ]
+}

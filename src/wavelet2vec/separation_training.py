@@ -32,6 +32,7 @@ class SeparationRunConfig:
     waveform_weight: float = 1.
     spectral_weight: float = 1.
     mixture_weight: float = 0.
+    source_weights: tuple[float, ...] | None = None
 
     def __post_init__(self):
         for name in ("total_steps", "batch_size", "accumulation_steps"):
@@ -53,6 +54,11 @@ class SeparationRunConfig:
         if any(not math.isfinite(w) or w < 0 for w in weights) or sum(weights[:2]) == 0:
             raise ValueError("loss weights must be nonnegative with a supervised term")
         object.__setattr__(self, "fft_sizes", tuple(self.fft_sizes))
+        if self.source_weights is not None:
+            values = tuple(self.source_weights)
+            if not values or any(isinstance(v, bool) or not math.isfinite(v) or v <= 0 for v in values):
+                raise ValueError("source_weights must be finite positive values")
+            object.__setattr__(self, "source_weights", values)
         if self.spectral_weight and (not self.fft_sizes or any(isinstance(k, bool) or not isinstance(k, int)
                                                              or k < 4 or k % 2 for k in self.fft_sizes)):
             raise ValueError("fft_sizes must contain even integers >= 4")
@@ -61,7 +67,7 @@ class SeparationRunConfig:
         return json.loads(json.dumps({"version": "separation-run-v1", **asdict(self)}))
 
     def loss_options(self):
-        return {key: getattr(self, key) for key in ("fft_sizes", "waveform_weight", "spectral_weight", "mixture_weight")}
+        return {key: getattr(self, key) for key in ("fft_sizes", "waveform_weight", "spectral_weight", "mixture_weight", "source_weights")}
 
 
 def _check(model, dataset):
@@ -121,6 +127,9 @@ class SeparationTrainingRun:
         self.model, self.training, self.validation = model, training, validation
         self.config = config or SeparationRunConfig()
         _check(model, training)
+        if self.config.source_weights is not None and len(self.config.source_weights) != len(model.config.source_names):
+            raise ValueError("source_weights length must match model source order")
+        self._source_weights = dict(zip(model.config.source_names, self.config.source_weights or (1.,)*len(model.config.source_names)))
         if training.split != "train":
             raise ValueError("training data must use the train split")
         if validation is not None:
@@ -170,7 +179,7 @@ class SeparationTrainingRun:
             for index in indices:
                 ri = self.training.mixtures._entries[index][0]
                 count = self.sampler.lengths[index]*self.training.config.channels
-                supervised_count += count*len(self.training.records[ri].sources)
+                supervised_count += count*sum(self._source_weights[name] for name in self.training.records[ri].sources)
                 mixture_count += count
             cursor += 1
         state = _rng()
@@ -190,7 +199,8 @@ class SeparationTrainingRun:
                 batch = batch.to(next(self.model.parameters()).device)
                 prediction = _prediction(self.model, batch, windows)
                 losses = separation_loss(prediction, batch, **cfg.loss_options())
-                weight = sum(window.example.mixture.numel()*len(window.example.sources) for window in windows)/supervised_count
+                weight = sum(window.example.mixture.numel()*sum(self._source_weights[name] for name in window.example.sources)
+                             for window in windows)/supervised_count
                 mix_weight = sum(window.example.mixture.numel() for window in windows)/mixture_count
                 loss = (cfg.waveform_weight*losses["waveform_l1"]*weight
                         + cfg.spectral_weight*losses["complex_spectral_l1"]*weight

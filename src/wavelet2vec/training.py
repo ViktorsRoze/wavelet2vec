@@ -86,7 +86,7 @@ def collate_sources(examples: Sequence[SourceExample], *, source_order: Sequence
 
 
 def separation_loss(estimate: torch.Tensor, batch: SourceBatch, *, fft_sizes=(256,1024),
-                    waveform_weight=1., spectral_weight=1., mixture_weight=0.) -> dict[str, torch.Tensor]:
+                    waveform_weight=1., spectral_weight=1., mixture_weight=0., source_weights=None) -> dict[str, torch.Tensor]:
     """Masked waveform L1 plus amplitude-calibrated complex-STFT L1.
 
     Spectral transforms use each example's real length (no padded-batch tail),
@@ -104,13 +104,24 @@ def separation_loss(estimate: torch.Tensor, batch: SourceBatch, *, fft_sizes=(25
     if spectral_weight and (not fft_sizes or any(isinstance(k,bool) or not isinstance(k,int) or k<4 or k%2 for k in fft_sizes)):
         raise ValueError("fft_sizes must contain even integers >= 4")
     mask = batch.source_valid[:,:,None,None] & batch.sample_mask[:,None,None,:]
+    source_scale = None
+    if source_weights is not None:
+        source_scale = torch.as_tensor(source_weights, dtype=estimate.dtype, device=estimate.device)
+        if (source_scale.shape != (len(batch.source_order),) or source_scale.requires_grad
+                or not torch.isfinite(source_scale).all() or not (source_scale > 0).all()):
+            raise ValueError("source_weights must be fixed, finite positive values in source_order")
     # Sanitize ignored positions before arithmetic so NaNs in an unused model
     # tail or unannotated source cannot contaminate an otherwise valid loss.
     prediction = torch.where(mask, estimate, 0.)
     target = torch.where(mask, batch.sources, 0.)
     count = mask.sum()*estimate.shape[2]
+    if source_scale is not None:
+        count = (mask*source_scale[None,:,None,None]).sum()*estimate.shape[2]
     if not count:raise ValueError("batch has no valid supervised samples")
-    waveform = (prediction-target).abs().sum()/count
+    waveform_error = (prediction-target).abs()
+    if source_scale is not None:
+        waveform_error = waveform_error*source_scale[None,:,None,None]
+    waveform = waveform_error.sum()/count
     spectral = prediction.sum()*0.
     if spectral_weight:
         for i, length in enumerate(batch.lengths.tolist()):
@@ -125,8 +136,12 @@ def separation_loss(estimate: torch.Tensor, batch: SourceBatch, *, fft_sizes=(25
                                pad_mode="constant", return_complex=True)
                 scale = p.new_full((size//2+1,),2.)
                 scale[0] = scale[-1] = 1.
-                error = ((torch.stft(p,**options)-torch.stft(y,**options)).abs()*scale[:,None]/window.sum()).mean()
-                spectral = spectral+error*contribution/len(fft_sizes)
+                error = ((torch.stft(p,**options)-torch.stft(y,**options)).abs()*scale[:,None]/window.sum())
+                if source_scale is None:
+                    spectral = spectral+error.mean()*contribution/len(fft_sizes)
+                else:
+                    channel_weights = source_scale[selected].repeat_interleave(estimate.shape[2])
+                    spectral = spectral+(error.mean((-2,-1))*channel_weights).sum()*length/count/len(fft_sizes)
     mixture = prediction.sum()*0.
     if mixture_weight:
         mixture_error = prediction.sum(1)-batch.mixture

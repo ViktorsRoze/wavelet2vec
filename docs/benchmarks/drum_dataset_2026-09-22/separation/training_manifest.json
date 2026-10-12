@@ -1,0 +1,505 @@
+{
+  "schema": "multitrack-v1",
+  "source_order": [
+    "kick_drum",
+    "snare",
+    "clap",
+    "open_hihat",
+    "tom",
+    "closed_hihat",
+    "bongos",
+    "cow_bell"
+  ],
+  "records": [
+    {
+      "track_id": "kick_drum+snare",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "405fee29298918bc9fe7e1c03d9485916cbb156a623cfcbe163d9717502f8144",
+        "pcm_hash": "74decbcdf4bbc08af6db56f8d7a54b1f8bc77bfb85d17ec0e2bef0f55945a270"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": null,
+        "open_hihat": null,
+        "tom": null,
+        "closed_hihat": null,
+        "bongos": null,
+        "cow_bell": null
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    },
+    {
+      "track_id": "kick_drum+snare+clap",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare+clap.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "1f4489ec5aaa77b2604ef328e8c44c3069df54fc32f5e597daf6fc45125f05cd",
+        "pcm_hash": "656362c777db848a6d274d4294ab9e708f88a2bde05e230ddfd4977560d821a3"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": {
+          "path": "prepared_train\\only_clap.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "b25bcb1308b5bf2711301816e82ffebfaf0dc0d537975b881cacb496864b3bea",
+          "pcm_hash": "7445563a32b19879b5f1ced10f9c49c722d56587dbb6708d599e783b2facd685"
+        },
+        "open_hihat": null,
+        "tom": null,
+        "closed_hihat": null,
+        "bongos": null,
+        "cow_bell": null
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    },
+    {
+      "track_id": "kick_drum+snare+clap+open_hihat",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare+clap+open_hihat.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "bc0925e32a95d61015fbbdd4589ddb0872a4094d7c51d73f76d5289d8e75ae65",
+        "pcm_hash": "75a539edd1ee3ba5cbcc7b23c53704a5866f4991cfadede9fc4029f29853ed84"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": {
+          "path": "prepared_train\\only_clap.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "b25bcb1308b5bf2711301816e82ffebfaf0dc0d537975b881cacb496864b3bea",
+          "pcm_hash": "7445563a32b19879b5f1ced10f9c49c722d56587dbb6708d599e783b2facd685"
+        },
+        "open_hihat": {
+          "path": "prepared_train\\only_open_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "43299f132f0ac3ad7e0aada7f5586602dc630369d28eabc51311d68c3eea4500",
+          "pcm_hash": "60b6f2edbc9bff5a3000c3d638a69f98f1cac21c79d24d6286e931f9d45d1fb5"
+        },
+        "tom": null,
+        "closed_hihat": null,
+        "bongos": null,
+        "cow_bell": null
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    },
+    {
+      "track_id": "kick_drum+snare+clap+open_hihat+tom",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare+clap+open_hihat+tom.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "f9b7d19ed877562b7afe134e48d8fe0c1f6970041f4c09ea56e2309ec3e13cbf",
+        "pcm_hash": "ba63ab1c43379d3b27708607477c322d92458223ae8961f32d311760fbc20c77"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": {
+          "path": "prepared_train\\only_clap.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "b25bcb1308b5bf2711301816e82ffebfaf0dc0d537975b881cacb496864b3bea",
+          "pcm_hash": "7445563a32b19879b5f1ced10f9c49c722d56587dbb6708d599e783b2facd685"
+        },
+        "open_hihat": {
+          "path": "prepared_train\\only_open_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "43299f132f0ac3ad7e0aada7f5586602dc630369d28eabc51311d68c3eea4500",
+          "pcm_hash": "60b6f2edbc9bff5a3000c3d638a69f98f1cac21c79d24d6286e931f9d45d1fb5"
+        },
+        "tom": {
+          "path": "prepared_train\\only_tom.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "066fe77d5702fe6c540d6d4d6f04bbf2f4f882834eef97086d1a8e49795cdec6",
+          "pcm_hash": "1233bd7606ccc8c79a2676a7550173c1c6dc5201845c595a4e71eff27e735d02"
+        },
+        "closed_hihat": null,
+        "bongos": null,
+        "cow_bell": null
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    },
+    {
+      "track_id": "kick_drum+snare+clap+open_hihat+tom+closed_hihat",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare+clap+open_hihat+tom+closed_hihat.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "114b0c2fddf5ceb0a51487ad61d48567d6db1fdb65340eab69e22ad17d642d14",
+        "pcm_hash": "bf092f7c3f66e9e0264ebf3a7718d19f37610a452c97ed5b15bdd6fe73c55c34"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": {
+          "path": "prepared_train\\only_clap.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "b25bcb1308b5bf2711301816e82ffebfaf0dc0d537975b881cacb496864b3bea",
+          "pcm_hash": "7445563a32b19879b5f1ced10f9c49c722d56587dbb6708d599e783b2facd685"
+        },
+        "open_hihat": {
+          "path": "prepared_train\\only_open_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "43299f132f0ac3ad7e0aada7f5586602dc630369d28eabc51311d68c3eea4500",
+          "pcm_hash": "60b6f2edbc9bff5a3000c3d638a69f98f1cac21c79d24d6286e931f9d45d1fb5"
+        },
+        "tom": {
+          "path": "prepared_train\\only_tom.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "066fe77d5702fe6c540d6d4d6f04bbf2f4f882834eef97086d1a8e49795cdec6",
+          "pcm_hash": "1233bd7606ccc8c79a2676a7550173c1c6dc5201845c595a4e71eff27e735d02"
+        },
+        "closed_hihat": {
+          "path": "prepared_train\\only_closed_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "9f2831aa753b031a65752a5fb98f3ddea42192ab56b3de59f9953b78712571a0",
+          "pcm_hash": "ed2d18971df20ea3cc33629f52152b00dcc12cf0791468c27d08ec27fa8d74a7"
+        },
+        "bongos": null,
+        "cow_bell": null
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    },
+    {
+      "track_id": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "6d3484ca6da1278817d84894f5c3de89779086c14545e15a4a5823c6cfe2e417",
+        "pcm_hash": "43ed4a754dd78442a36d95df38a17d107ff048e3ba667ea6b9f3140884d96003"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": {
+          "path": "prepared_train\\only_clap.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "b25bcb1308b5bf2711301816e82ffebfaf0dc0d537975b881cacb496864b3bea",
+          "pcm_hash": "7445563a32b19879b5f1ced10f9c49c722d56587dbb6708d599e783b2facd685"
+        },
+        "open_hihat": {
+          "path": "prepared_train\\only_open_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "43299f132f0ac3ad7e0aada7f5586602dc630369d28eabc51311d68c3eea4500",
+          "pcm_hash": "60b6f2edbc9bff5a3000c3d638a69f98f1cac21c79d24d6286e931f9d45d1fb5"
+        },
+        "tom": {
+          "path": "prepared_train\\only_tom.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "066fe77d5702fe6c540d6d4d6f04bbf2f4f882834eef97086d1a8e49795cdec6",
+          "pcm_hash": "1233bd7606ccc8c79a2676a7550173c1c6dc5201845c595a4e71eff27e735d02"
+        },
+        "closed_hihat": {
+          "path": "prepared_train\\only_closed_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "9f2831aa753b031a65752a5fb98f3ddea42192ab56b3de59f9953b78712571a0",
+          "pcm_hash": "ed2d18971df20ea3cc33629f52152b00dcc12cf0791468c27d08ec27fa8d74a7"
+        },
+        "bongos": {
+          "path": "prepared_train\\only_bongos.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "a717d7955ee17a0c04cc27aa667b69c57d6fd9b82bea2e12b78f2141d7659b52",
+          "pcm_hash": "343035a0b76469ec3005c34265f8d46b4068cf692ff04407ecc447324a0162b4"
+        },
+        "cow_bell": null
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    },
+    {
+      "track_id": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell",
+      "mixture": {
+        "path": "prepared_train\\kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell.wav",
+        "group_id": "single-drum-performance-bpm128",
+        "split": "train",
+        "sample_rate": 44100,
+        "channels": 2,
+        "frames": 248062,
+        "file_hash": "48d31febcb410fc81a78597b1001d472bb4b26f30c064095d9f75dd34aa6c75f",
+        "pcm_hash": "035a44a4a84d13c31447262df80e58ef85b03ec868e5786c0f970d4c1bc23f2f"
+      },
+      "sources": {
+        "kick_drum": {
+          "path": "prepared_train\\only_kick_drum.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "8f9837efddeecc9f50e20c77947817d981c47ff4b99363c472ba1a1017aafbd2",
+          "pcm_hash": "2260fb52dbc88ab12f556cba1df62f6c29f41c32083bee8b7a05d6bf48ee6dce"
+        },
+        "snare": {
+          "path": "prepared_train\\only_snare.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "7c25e3880a5c7a0be88a967c92460bb208101eba5a16c6c1db36d45e0c720094",
+          "pcm_hash": "d6f0b757c65a2cdec4782654c6d9e42258c60d8724a0765b8c49dc76398bc9ac"
+        },
+        "clap": {
+          "path": "prepared_train\\only_clap.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "b25bcb1308b5bf2711301816e82ffebfaf0dc0d537975b881cacb496864b3bea",
+          "pcm_hash": "7445563a32b19879b5f1ced10f9c49c722d56587dbb6708d599e783b2facd685"
+        },
+        "open_hihat": {
+          "path": "prepared_train\\only_open_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "43299f132f0ac3ad7e0aada7f5586602dc630369d28eabc51311d68c3eea4500",
+          "pcm_hash": "60b6f2edbc9bff5a3000c3d638a69f98f1cac21c79d24d6286e931f9d45d1fb5"
+        },
+        "tom": {
+          "path": "prepared_train\\only_tom.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "066fe77d5702fe6c540d6d4d6f04bbf2f4f882834eef97086d1a8e49795cdec6",
+          "pcm_hash": "1233bd7606ccc8c79a2676a7550173c1c6dc5201845c595a4e71eff27e735d02"
+        },
+        "closed_hihat": {
+          "path": "prepared_train\\only_closed_hihat.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "9f2831aa753b031a65752a5fb98f3ddea42192ab56b3de59f9953b78712571a0",
+          "pcm_hash": "ed2d18971df20ea3cc33629f52152b00dcc12cf0791468c27d08ec27fa8d74a7"
+        },
+        "bongos": {
+          "path": "prepared_train\\only_bongos.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "a717d7955ee17a0c04cc27aa667b69c57d6fd9b82bea2e12b78f2141d7659b52",
+          "pcm_hash": "343035a0b76469ec3005c34265f8d46b4068cf692ff04407ecc447324a0162b4"
+        },
+        "cow_bell": {
+          "path": "prepared_train\\only_cow_bell.wav",
+          "group_id": "single-drum-performance-bpm128",
+          "split": "train",
+          "sample_rate": 44100,
+          "channels": 2,
+          "frames": 248062,
+          "file_hash": "791ccd22d8e18124ccedfe291baf33ba08cd5c440e54cf0e6c9b0c40a0dbd40a",
+          "pcm_hash": "35019489f3619af9cef4b9c1b66c6c8940a6389894b78c71aeb52648fa1503d6"
+        }
+      },
+      "additive": false,
+      "alignment": "sample_aligned"
+    }
+  ]
+}

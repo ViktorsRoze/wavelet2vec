@@ -205,7 +205,8 @@ def test_failed_accumulation_rewinds_rng_and_data_position(tmp_path, monkeypatch
 
 
 @pytest.mark.parametrize("missing", [False, True])
-def test_accumulation_weights_variable_lengths_like_one_batch(tmp_path, missing):
+@pytest.mark.parametrize("source_weights", [None, (1., 4., .5)])
+def test_accumulation_weights_variable_lengths_like_one_batch(tmp_path, missing, source_weights):
     torch.manual_seed(8)
     m = manifest(tmp_path, lengths=(32, 96, 80, 128))
     if missing:
@@ -215,7 +216,8 @@ def test_accumulation_weights_variable_lengths_like_one_batch(tmp_path, missing)
     train = MultitrackDataset(m, "train", crop)
     base = model(m, dropout=0)
     cfg = SeparationRunConfig(total_steps=2, warmup_steps=0, batch_size=1, accumulation_steps=2,
-                              fft_sizes=(32,), weight_decay=0, max_grad_norm=1000, mixture_weight=0 if missing else .1)
+                              fft_sizes=(32,), weight_decay=0, max_grad_norm=1000, mixture_weight=0 if missing else .1,
+                              source_weights=source_weights)
     small = SeparationTrainingRun(copy.deepcopy(base), train, config=cfg)
     large = SeparationTrainingRun(copy.deepcopy(base), train, config=replace(cfg, batch_size=2, accumulation_steps=1))
     a, b = small.step(), large.step()

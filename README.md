@@ -1,5 +1,11 @@
 # wavelet2vec
 
+**v0.36.0 runs the first real drum-substem experiment.** New event/reference
+diagnostics and optional source-balanced losses support measured tests on
+eight solos and seven mixes. The pipeline runs; quiet-drum separation remains
+weak. See [findings and listening results](docs/DRUM_DATASET_FINDINGS.md) and
+[percussive analysis APIs](docs/DRUM_ANALYSIS.md).
+
 **v0.35.0 adds portable separator inference bundles.** Versioned architecture,
 checked weights, native precision, source order and render defaults travel
 together, with a dedicated inspect/render CLI. See

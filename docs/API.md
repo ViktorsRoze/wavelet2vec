@@ -1,5 +1,11 @@
 # wavelet2vec — API Reference
 
+v0.36.0 adds `detect_percussive_events`, `compare_percussive_events`,
+`analyze_drum_track` and optional `source_weights` in `separation_loss` /
+`SeparationRunConfig`. [DRUM_ANALYSIS.md](DRUM_ANALYSIS.md) defines their
+measurement contracts; [real-data findings](DRUM_DATASET_FINDINGS.md) include
+the first trained drum-substem comparison.
+
 v0.35.0 adds `SeparatorBundle`, `save_separator_bundle`,
 `inspect_separator_bundle`, `load_separator_bundle`, and
 `SeparationTrainingRun.export_bundle`. [INFERENCE_BUNDLES.md](INFERENCE_BUNDLES.md)

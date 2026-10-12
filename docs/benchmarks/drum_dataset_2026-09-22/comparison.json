@@ -1,0 +1,61 @@
+{
+  "same_training_pcm": true,
+  "sources": [
+    {
+      "source": "kick_drum",
+      "separation": 4.8848364032969736,
+      "separation_balanced": 4.96772185629362,
+      "separation_q8": 5.292255411703678,
+      "reference_ratio_mask": 15.60836766659821
+    },
+    {
+      "source": "snare",
+      "separation": -0.3161102871767058,
+      "separation_balanced": 0.027821077631908706,
+      "separation_q8": -0.1930275739440804,
+      "reference_ratio_mask": 3.862942579367832
+    },
+    {
+      "source": "clap",
+      "separation": -3.3628077238832104,
+      "separation_balanced": -0.6168368321614697,
+      "separation_q8": -0.9081462475327202,
+      "reference_ratio_mask": 1.805807006872695
+    },
+    {
+      "source": "open_hihat",
+      "separation": -0.8059055978731025,
+      "separation_balanced": -0.02244435937251502,
+      "separation_q8": 0.08499049166183273,
+      "reference_ratio_mask": 1.553608652237859
+    },
+    {
+      "source": "tom",
+      "separation": 2.4698463742235512,
+      "separation_balanced": 2.018202131514185,
+      "separation_q8": 4.387853860103464,
+      "reference_ratio_mask": 14.2435507682681
+    },
+    {
+      "source": "closed_hihat",
+      "separation": -0.7508473808914385,
+      "separation_balanced": 0.17085612570435738,
+      "separation_q8": 0.3730434097698199,
+      "reference_ratio_mask": 5.347790125796301
+    },
+    {
+      "source": "bongos",
+      "separation": 3.0630286736598267,
+      "separation_balanced": 2.615851028461228,
+      "separation_q8": 4.667363457793876,
+      "reference_ratio_mask": 12.130528663062506
+    },
+    {
+      "source": "cow_bell",
+      "separation": 4.24326553753516,
+      "separation_balanced": 2.093088513819226,
+      "separation_q8": 7.93232112710446,
+      "reference_ratio_mask": 16.301991705276443
+    }
+  ]
+}

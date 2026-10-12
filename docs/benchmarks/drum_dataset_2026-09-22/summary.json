@@ -1,0 +1,130 @@
+[
+  {
+    "source": "bongos",
+    "events": 42,
+    "repeat_groups": 16,
+    "level_span_db": 4.0391574473287335,
+    "balance_range": [
+      -0.1842673495798956,
+      0.5832395196839731
+    ],
+    "accepted_pitch_fits": 1,
+    "relative_pitch_range": [
+      0.0,
+      0.0
+    ],
+    "matched_gain_span_db": null
+  },
+  {
+    "source": "clap",
+    "events": 9,
+    "repeat_groups": 7,
+    "level_span_db": 0.15948353485462974,
+    "balance_range": [
+      0.0,
+      0.0
+    ],
+    "accepted_pitch_fits": 4,
+    "relative_pitch_range": [
+      -0.0014597885962970689,
+      0.0008423333221143647
+    ],
+    "matched_gain_span_db": 0.13833377918206513
+  },
+  {
+    "source": "closed_hihat",
+    "events": 64,
+    "repeat_groups": 35,
+    "level_span_db": 5.304424279229451,
+    "balance_range": [
+      -0.21909756075756226,
+      0.4052330512814556
+    ],
+    "accepted_pitch_fits": 55,
+    "relative_pitch_range": [
+      -1.5999631689452432,
+      6.5995164400734865
+    ],
+    "matched_gain_span_db": 3.6414362817696677
+  },
+  {
+    "source": "cow_bell",
+    "events": 42,
+    "repeat_groups": 1,
+    "level_span_db": 0.05620107968020349,
+    "balance_range": [
+      -0.11134002422031564,
+      -0.10875632616331415
+    ],
+    "accepted_pitch_fits": 42,
+    "relative_pitch_range": [
+      0.0,
+      0.00011043821706640566
+    ],
+    "matched_gain_span_db": 0.059799343999105734
+  },
+  {
+    "source": "kick_drum",
+    "events": 16,
+    "repeat_groups": 1,
+    "level_span_db": 0.7794532186027752,
+    "balance_range": [
+      0.0,
+      0.0
+    ],
+    "accepted_pitch_fits": 16,
+    "relative_pitch_range": [
+      -0.00014426943059127155,
+      0.0003363523017075417
+    ],
+    "matched_gain_span_db": 0.0010276470229041064
+  },
+  {
+    "source": "open_hihat",
+    "events": 16,
+    "repeat_groups": 14,
+    "level_span_db": 1.463206996791726,
+    "balance_range": [
+      0.13698942928702468,
+      0.1628150054772716
+    ],
+    "accepted_pitch_fits": 11,
+    "relative_pitch_range": [
+      0.0,
+      0.0
+    ],
+    "matched_gain_span_db": 1.9469117155646805
+  },
+  {
+    "source": "snare",
+    "events": 8,
+    "repeat_groups": 2,
+    "level_span_db": 0.01138728270854017,
+    "balance_range": [
+      -0.09835015743781048,
+      -0.09831691310919267
+    ],
+    "accepted_pitch_fits": 8,
+    "relative_pitch_range": [
+      0.0,
+      5.5025526711360144e-05
+    ],
+    "matched_gain_span_db": 0.1618406499409038
+  },
+  {
+    "source": "tom",
+    "events": 15,
+    "repeat_groups": 1,
+    "level_span_db": 0.2351468150945415,
+    "balance_range": [
+      -0.2364255353815166,
+      0.20504447459579286
+    ],
+    "accepted_pitch_fits": 15,
+    "relative_pitch_range": [
+      -0.011084005876117853,
+      0.0012079413880096788
+    ],
+    "matched_gain_span_db": 0.23920885958826674
+  }
+]

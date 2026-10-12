@@ -1,0 +1,71 @@
+{
+  "scope": "Agreement with automatically detected solo events, not MIDI/manual ground truth; fourth-bar interior only.",
+  "tolerance_seconds": 0.03,
+  "excluded_edge_seconds": 0.05,
+  "sources": {
+    "kick_drum": {
+      "reference_events": 3,
+      "estimated_events": 6,
+      "matched": 3,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6666666666666666
+    },
+    "snare": {
+      "reference_events": 2,
+      "estimated_events": 15,
+      "matched": 2,
+      "precision": 0.13333333333333333,
+      "recall": 1.0,
+      "f1": 0.23529411764705882
+    },
+    "clap": {
+      "reference_events": 2,
+      "estimated_events": 15,
+      "matched": 2,
+      "precision": 0.13333333333333333,
+      "recall": 1.0,
+      "f1": 0.23529411764705882
+    },
+    "open_hihat": {
+      "reference_events": 4,
+      "estimated_events": 15,
+      "matched": 4,
+      "precision": 0.26666666666666666,
+      "recall": 1.0,
+      "f1": 0.4210526315789474
+    },
+    "tom": {
+      "reference_events": 3,
+      "estimated_events": 9,
+      "matched": 3,
+      "precision": 0.3333333333333333,
+      "recall": 1.0,
+      "f1": 0.5
+    },
+    "closed_hihat": {
+      "reference_events": 15,
+      "estimated_events": 15,
+      "matched": 15,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "bongos": {
+      "reference_events": 14,
+      "estimated_events": 15,
+      "matched": 14,
+      "precision": 0.9333333333333333,
+      "recall": 1.0,
+      "f1": 0.9655172413793104
+    },
+    "cow_bell": {
+      "reference_events": 14,
+      "estimated_events": 15,
+      "matched": 14,
+      "precision": 0.9333333333333333,
+      "recall": 1.0,
+      "f1": 0.9655172413793104
+    }
+  }
+}

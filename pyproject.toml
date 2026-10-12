@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelet2vec"
-version = "0.35.0"
+version = "0.36.0"
 description = "Deterministic, phase-aware musical embeddings for short audio snippets, built on constant-Q Morlet wavelets."
 readme = "README.md"
 license = { text = "MIT" }

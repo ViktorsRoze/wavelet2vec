@@ -1,0 +1,299 @@
+{
+  "scope": "Privileged source-reference ratio masks on fourth bar; not trained separation or a theoretical upper bound.",
+  "source_order": [
+    "kick_drum",
+    "snare",
+    "clap",
+    "open_hihat",
+    "tom",
+    "closed_hihat",
+    "bongos",
+    "cow_bell"
+  ],
+  "runs": [
+    {
+      "name": "compact_q2_32",
+      "configuration": {
+        "version": "hybrid-v2",
+        "sample_rate": 44100,
+        "backend": "compact_wavelet",
+        "n_bands": 32,
+        "f_min": 20.0,
+        "f_max": null,
+        "q": 2,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 1024,
+        "hop_length": 256,
+        "n_fft": 2048,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "sources": {
+        "kick_drum": {
+          "snr_db": 8.602131492293664,
+          "waveform_l1": 0.005905900027805338,
+          "output_rms": 0.026301369321197872,
+          "target_rms": 0.03292551886696976
+        },
+        "snare": {
+          "snr_db": 1.0588440618124355,
+          "waveform_l1": 0.0008205688450924121,
+          "output_rms": 0.0014114405292925964,
+          "target_rms": 0.004875180526605595
+        },
+        "clap": {
+          "snr_db": 0.4721520053778071,
+          "waveform_l1": 0.0003740752265253893,
+          "output_rms": 0.0002933449957213342,
+          "target_rms": 0.0016089504263488315
+        },
+        "open_hihat": {
+          "snr_db": 1.1681170485052308,
+          "waveform_l1": 0.0013646968306742031,
+          "output_rms": 0.0019610308185010906,
+          "target_rms": 0.004101959436369416
+        },
+        "tom": {
+          "snr_db": 7.963242354543868,
+          "waveform_l1": 0.006552622061020324,
+          "output_rms": 0.026811010620613814,
+          "target_rms": 0.03340403449178456
+        },
+        "closed_hihat": {
+          "snr_db": 1.897300872576074,
+          "waveform_l1": 0.000948141018590078,
+          "output_rms": 0.0013567762645521001,
+          "target_rms": 0.0033890083591544004
+        },
+        "bongos": {
+          "snr_db": 9.191967059511938,
+          "waveform_l1": 0.011328903621005236,
+          "output_rms": 0.05449026022221918,
+          "target_rms": 0.05972525650884294
+        },
+        "cow_bell": {
+          "snr_db": 12.760946703277114,
+          "waveform_l1": 0.012518173958494062,
+          "output_rms": 0.08838775195168488,
+          "target_rms": 0.09267061861183323
+        }
+      }
+    },
+    {
+      "name": "compact_q8_96",
+      "configuration": {
+        "version": "hybrid-v2",
+        "sample_rate": 44100,
+        "backend": "compact_wavelet",
+        "n_bands": 96,
+        "f_min": 20.0,
+        "f_max": null,
+        "q": 8,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 1024,
+        "hop_length": 256,
+        "n_fft": 2048,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "sources": {
+        "kick_drum": {
+          "snr_db": 15.60836766659821,
+          "waveform_l1": 0.002260282190193173,
+          "output_rms": 0.03206241364195929,
+          "target_rms": 0.03292551886696976
+        },
+        "snare": {
+          "snr_db": 3.862942579367832,
+          "waveform_l1": 0.0006589250623101725,
+          "output_rms": 0.0031392765177478067,
+          "target_rms": 0.004875180526605595
+        },
+        "clap": {
+          "snr_db": 1.805807006872695,
+          "waveform_l1": 0.0003285468385366608,
+          "output_rms": 0.0007625203158040229,
+          "target_rms": 0.0016089504263488315
+        },
+        "open_hihat": {
+          "snr_db": 1.553608652237859,
+          "waveform_l1": 0.001278396406945698,
+          "output_rms": 0.0034035845830523207,
+          "target_rms": 0.004101959436369416
+        },
+        "tom": {
+          "snr_db": 14.2435507682681,
+          "waveform_l1": 0.0028420429116956746,
+          "output_rms": 0.03175694466304684,
+          "target_rms": 0.03340403449178456
+        },
+        "closed_hihat": {
+          "snr_db": 5.347790125796301,
+          "waveform_l1": 0.0006218054411102225,
+          "output_rms": 0.002690870805702828,
+          "target_rms": 0.0033890083591544004
+        },
+        "bongos": {
+          "snr_db": 12.130528663062506,
+          "waveform_l1": 0.00769164226160519,
+          "output_rms": 0.057313536791400756,
+          "target_rms": 0.05972525650884294
+        },
+        "cow_bell": {
+          "snr_db": 16.301991705276443,
+          "waveform_l1": 0.00757216365036964,
+          "output_rms": 0.09111365810383276,
+          "target_rms": 0.09267061861183323
+        }
+      }
+    },
+    {
+      "name": "stft512",
+      "configuration": {
+        "version": "hybrid-v2",
+        "sample_rate": 44100,
+        "backend": "stft",
+        "n_bands": 32,
+        "f_min": 20.0,
+        "f_max": null,
+        "q": 2,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 1024,
+        "hop_length": 128,
+        "n_fft": 512,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "sources": {
+        "kick_drum": {
+          "snr_db": 11.022644517488827,
+          "waveform_l1": 0.004439403863292671,
+          "output_rms": 0.03156790129660271,
+          "target_rms": 0.03292551886696976
+        },
+        "snare": {
+          "snr_db": 2.6800381425160276,
+          "waveform_l1": 0.0006882358963877057,
+          "output_rms": 0.00262670890341056,
+          "target_rms": 0.004875180526605595
+        },
+        "clap": {
+          "snr_db": 1.8839189915952004,
+          "waveform_l1": 0.00032482726496039447,
+          "output_rms": 0.0007922441869470041,
+          "target_rms": 0.0016089504263488315
+        },
+        "open_hihat": {
+          "snr_db": 1.5893062119267336,
+          "waveform_l1": 0.001272346308594751,
+          "output_rms": 0.0035082514375323237,
+          "target_rms": 0.004101959436369416
+        },
+        "tom": {
+          "snr_db": 10.124367927453324,
+          "waveform_l1": 0.0051129033094801804,
+          "output_rms": 0.030646080178184675,
+          "target_rms": 0.03340403449178456
+        },
+        "closed_hihat": {
+          "snr_db": 5.4236690980028515,
+          "waveform_l1": 0.0006238307763185608,
+          "output_rms": 0.0027341467279678833,
+          "target_rms": 0.0033890083591544004
+        },
+        "bongos": {
+          "snr_db": 12.00085972150494,
+          "waveform_l1": 0.007800104799516936,
+          "output_rms": 0.057287070128817466,
+          "target_rms": 0.05972525650884294
+        },
+        "cow_bell": {
+          "snr_db": 16.24101153435123,
+          "waveform_l1": 0.007624560331393007,
+          "output_rms": 0.09091589726641043,
+          "target_rms": 0.09267061861183323
+        }
+      }
+    },
+    {
+      "name": "stft2048",
+      "configuration": {
+        "version": "hybrid-v2",
+        "sample_rate": 44100,
+        "backend": "stft",
+        "n_bands": 32,
+        "f_min": 20.0,
+        "f_max": null,
+        "q": 2,
+        "bandwidth_floor_hz": 0.0,
+        "padding_samples": 1024,
+        "hop_length": 256,
+        "n_fft": 2048,
+        "context_mode": "complex",
+        "compact_truncate_sigma": 4.0,
+        "compact_oversampling": 1,
+        "compact_fft_mode": "power2",
+        "max_coefficient_bytes": 268435456
+      },
+      "sources": {
+        "kick_drum": {
+          "snr_db": 14.8659127581039,
+          "waveform_l1": 0.002489768317808974,
+          "output_rms": 0.03201711059274589,
+          "target_rms": 0.03292551886696976
+        },
+        "snare": {
+          "snr_db": 3.2831632133994697,
+          "waveform_l1": 0.0007211113384003495,
+          "output_rms": 0.0031533137277958137,
+          "target_rms": 0.004875180526605595
+        },
+        "clap": {
+          "snr_db": 1.599592226389083,
+          "waveform_l1": 0.00034322213186946274,
+          "output_rms": 0.0007469550249450379,
+          "target_rms": 0.0016089504263488315
+        },
+        "open_hihat": {
+          "snr_db": 1.389997902718352,
+          "waveform_l1": 0.0013192655356638581,
+          "output_rms": 0.003235242675456625,
+          "target_rms": 0.004101959436369416
+        },
+        "tom": {
+          "snr_db": 13.511760276706967,
+          "waveform_l1": 0.002854114967182447,
+          "output_rms": 0.03167189882497457,
+          "target_rms": 0.03340403449178456
+        },
+        "closed_hihat": {
+          "snr_db": 5.028103724483511,
+          "waveform_l1": 0.0007341094750289371,
+          "output_rms": 0.0026419556114650094,
+          "target_rms": 0.0033890083591544004
+        },
+        "bongos": {
+          "snr_db": 12.356806170083027,
+          "waveform_l1": 0.007318443547903157,
+          "output_rms": 0.05703659861458579,
+          "target_rms": 0.05972525650884294
+        },
+        "cow_bell": {
+          "snr_db": 16.697556397435438,
+          "waveform_l1": 0.0071453412806784826,
+          "output_rms": 0.09118610574495152,
+          "target_rms": 0.09267061861183323
+        }
+      }
+    }
+  ]
+}

@@ -225,6 +225,241 @@ Two flaws:
   the critic gets stronger, so the score is not comparable across training.
 - **The model was small: 12 M parameters,** sized for the 4 GB GPU.
 
+## MorphNet-L (v2): pretrained Swin-L encoder, on the CPU
+
+Code: [src/wavelet2vec/morph_large.py](../src/wavelet2vec/morph_large.py),
+[experiments/train_morph_large.py](../experiments/train_morph_large.py),
+tests: [tests/test_morph_large.py](../tests/test_morph_large.py). Output:
+`experiments/output/morph/v2/`, dashboard run "morph/v2". Started 10 October
+2026, about 16 s per step, 8000 steps (~1.5 days). **Stopped the same day at
+step 530 of epoch 1**, to free the machine. It can be resumed from the
+half-epoch state (`checkpoints/last.pt`).
+
+| v1 weakness | MorphNet-L |
+|---|---|
+| 12 M parameters, untrained encoder | **433 M**. The shared encoder is KeyboardNet v3's Swin-L backbone (217 M), warm-started and fine-tuned at learning rate 2e-5, with v3's stems and exact-sample embedding. The decoder is v3's pretrained UPerNet head (pyramid pooling, FPN, full-resolution refinement). |
+| Fusion at one coarse scale | **Fusion transformers at three scales** (8/16/32 semitones × 80/160/320 ms tokens; depths 4/8/2, 188 M new parameters). Vocal and synth tokens attend to each other, conditioned on α. The finest scale and the stems are mixed by α-conditioned 1×1 convolutions that start as the average. |
+| Judges overconfident (logits ±12) with mutually exclusive heads | **Calibrated judges:** wider; label smoothing 0.05 (logits stay within ±3); a supervised contrastive term on the embedding. The class centres define a **vocality axis** (synth 0, vox 1), a graded target that does not saturate. |
+| α only a conditioning input | **Two α per pair** (0.5 and a random one) and a **ranking loss**: a higher α must give a higher vocality |
+| One critic, easily ahead | **Two critics:** the judge view, and a stereo view (mid and side) up to 20 kHz. **Feature matching** pulls the hybrids' critic features toward real notes' statistics. |
+| Selection by a drifting critic | **`best.pt` by fixed metrics:** see below |
+
+**Selection score** (lower is better):
+
+    J balance error + ½ (vocality error A + B) + ½ novelty shortfall
+      + ¼ (1 − fraction with both detectors on) + ¼ min(KID / KID of the plain mix, 4) / 4
+
+KID is the kernel distance between the hybrids' Wavelet2Vec embeddings and
+266 real held-out notes of every class.
+
+**Losses per hybrid:**
+
+| Loss | Weight |
+|---|---|
+| vocality → α | 1.0 |
+| logit balance | 0.2 |
+| presence (both detectors ≥ logit 1) | 0.5 |
+| novelty | 1.0 |
+| between | 1.0 |
+| feature matching | 1.0 |
+| critics (hinge) | 0.3, ramped in over steps 100–300 |
+| loudness | 0.5 |
+| anchor | 0.5 |
+| residual | 1.0 |
+| smooth | 0.02 |
+| α ranking (per pair) | 1.0 |
+
+**Robustness:** the process keeps Windows awake and enables Python's fault
+handler, so a native crash leaves a traceback in `train_err.txt`.
+KeyboardNet v3 died silently on 9 October after its epoch-1 checkpoint.
+
+### Stable pitch (added 10 October, before the run that counts)
+
+Listening to the v1 demos showed unsteady notes. The spectrograms in the
+dashboard show it too: v1 hybrids are smeared, with no clean harmonic lines.
+There were two causes, both in the output stage:
+- **Per-cell phase rotation.** A phase that changes from cell to cell is a
+  frequency change, so it added warble.
+- **Complex sums of the synth's and the voice's cells.** Two slightly
+  detuned partials in one band beat against each other.
+
+MorphNet-L now renders every hybrid with **one pitch source**:
+
+    sample = (1 − m) · A · U  +  m · N
+
+- **U, the pitch source's unit phasor.** The pitch source is the synth or
+  the vocal note, a control input like α; training uses each half the time.
+  Every partial keeps that note's own phase, so the hybrid's pitch is exactly
+  as stable as the source's. Where the source is more than 30 dB quieter
+  than the other note, the other note's phase takes over with a smooth
+  crossfade.
+- **A, the learned magnitude.** A time-varying combination of both notes'
+  sample-level **magnitudes**, plus a phase-locked residual magnitude.
+  Magnitudes add without interference, so there is no beating.
+- **N, the noise path.** Both notes' cells with their own phases, plus a
+  learned residual. It is used where the source cells are noise-like
+  (breath, consonants, noisy synths), so noise is not "pitched".
+- **m, from the source cells' phase-increment coherence:** 0 for tonal
+  cells (coherence ≥ 0.75), 1 for noise-like cells (≤ 0.4).
+
+**Pitch jitter** measures the energy-weighted spread, in cents, of the
+instantaneous frequency of harmonics 1–3. Test signal (tests:
+`test_hybrid_pitch_is_exactly_as_stable_as_its_pitch_source`):
+
+| Signal | Jitter |
+|---|---|
+| Steady synth | 0.3 ct |
+| Vocal with vibrato | 13.7 ct |
+| Plain mix (beats) | 7.1 ct |
+| Hybrid, synth pitch | **0.3 ct** |
+| Hybrid, vocal pitch | **13.7 ct** |
+
+Validation reports jitter for both hybrids, the two sources and the mix. The
+dashboard plots it. The demos hold both versions of every pair:
+`pairNN_hybrid.wav` (synth pitch) and `pairNN_hybrid_vocal_pitch.wav`.
+
+The first MorphNet-L launch, without stable pitch, was stopped at step 80.
+Its log is in `v2/attempt_unstable_pitch/`.
+
+### Syllables and vowels: kept, and controllable over time (added 10 October)
+
+The voice's articulation should stay recognizable in the hybrid, and at
+inference the vowels should be automatable, like a DAW automation lane.
+Code: [src/wavelet2vec/articulation.py](../src/wavelet2vec/articulation.py),
+tests: [tests/test_articulation.py](../tests/test_articulation.py).
+
+**Targets.** Every 10 ms frame of each vocal note gets a distribution over 10
+classes, from the algorithmic vocal detector (`tools/vocal_detector.py`):
+- silence;
+- the vowels i, e, eh, a, o, u;
+- sibilant, plosive, breath.
+
+Vowel frames get a softmax over the detector's template-fit errors, because
+neighbouring vowels are confused first. Each singer gets one vocal-tract
+scale, the median of its notes' own estimates. The targets are cached in
+`morph/articulation_cache.pt`.
+
+**Articulation judge.** A frame-wise classifier on the judge view. It
+convolves over frequency, pools over frequency, and keeps full time
+resolution through a dilated temporal stack. It is trained on the training
+takes and reports its accuracy on held-out takes. It reads the articulation
+of any sound, hybrids included.
+
+**Conditioning.** MorphNet-L takes an optional articulation curve
+`[10 classes, 120 frames]`, embedded at every scale. It enters the vocal
+encoder features before fusion, the fused features, and the full-resolution
+features of the output heads. All of it starts at zero, so a checkpoint
+without articulation loads unchanged (tested).
+
+**Training targets per pair:**
+
+| Share | Target |
+|---|---|
+| 50 % | The voice's own articulation (keep its syllables) |
+| 25 % | Another vowel, sung on the voice's vowel frames |
+| 25 % | A glide between two random vowels across the voice's vowel frames |
+
+Consonants and silences stay those of the source. The articulation loss
+(weight 0.5) is the soft cross-entropy between the judge's reading of the
+hybrid and the target, on voiced frames. It is weighted by 0.5 + α, so a more
+vocal hybrid is held more strictly.
+
+**Validation:**
+- **Vowels kept:** for the hybrid and for the voice itself (the ceiling).
+- **Vowels controlled:** a different vowel is requested.
+
+Both enter the selection score. Demos add **"hybrid, vowels a→o"**, a glide
+across each pair's vowel frames.
+
+**Inference** (vowel automation):
+
+```
+PYTHONPATH=src python experiments/morph_generate.py --checkpoint experiments/output/morph/v2/checkpoints/best.pt \
+    --vocal voice.wav --synth synth.wav --midi 60 --alpha 0.5 --pitch synth --vowels "a@0,o@0.8" --out hybrid.wav
+```
+
+| `--vowels` value | Effect |
+|---|---|
+| empty | Keep the voice's own syllables and vowels |
+| `"a"` | Sing "a" on the voice's vowel frames |
+| `"a@0,o@0.8"` | Glide from "a" at 0 s to "o" at 0.8 s |
+
+`--vowel-amount` (0–1) blends the curve with the voice's own vowels.
+In Python: `wavelet2vec.morph_large.generate_hybrid(model, vocal, synth, midi, alpha, pitch_source, vowels)`.
+`vowels` also accepts weight mixtures per point, e.g. `{"a": 0.5, "o": 0.5}`.
+
+**Limits:**
+- The detector's vowel labels are noisy at high pitch: Shevannai's "mu" is
+  labelled partly "i".
+- There are two singers.
+- Vowels can be steered only where the voice actually sings a vowel.
+- The vocal amount α is still one value per note; it cannot be automated
+  within a note yet.
+
+### Checkpoints every quarter epoch
+
+`{epoch:g}_epoch.pth` (0.25, 0.5, 0.75, 1.0, …) and a resumable `last.pt` are
+written every quarter epoch, about every 55 minutes at 800 steps per epoch.
+Stopping loses at most that. Each checkpoint is about 1.7 GB, and `last.pt`
+is about 5 GB because it holds the optimizer state.
+
+`--init-from <checkpoint>` starts a new run from a MorphNet-L checkpoint.
+Parts the checkpoint lacks start at zero. This is how the articulation
+version continues from the stable-pitch run.
+
+### Pause and continue exactly where it stopped (added 10 October)
+
+Code: [experiments/training_control.py](../experiments/training_control.py).
+Used by MorphNet-L and KeyboardNet v3.
+
+**Pausing.**
+- **Request:** press **Pause** in the dashboard (live run), or run
+  `python experiments/training_control.py pause experiments/output/morph/v2`.
+  Either creates a `PAUSE` file in the run folder.
+- **What the loop does:** it checks for that file before every step. It then
+  saves its complete state to `checkpoints/paused.pt`, logs a "paused" event
+  and exits.
+- **What the state holds:**
+  - model and critic weights;
+  - both optimizers and the learning-rate schedule;
+  - every random generator: the numpy generator (data order, vowel targets),
+    the torch generator (augmentation) and torch's global generator
+    (stochastic depth);
+  - the critics' running real-note statistics;
+  - the running epoch's step records and time;
+  - the position.
+
+**Resuming.**
+- **Request:** press **Resume training** in the dashboard (paused run), or run
+  `python experiments/training_control.py resume experiments/output/morph/v2`.
+- **What it does:** it starts the recorded command (`launch.json`: Python,
+  arguments, folder, threads) with `--resume`. The script loads the newer of
+  `paused.pt` and `last.pt` and continues at the next step.
+
+The quarter-epoch `last.pt` holds the same complete state, so resuming after
+a crash is exact too, from the last quarter. Checkpoints written before this
+change lack the generator states. Resuming from them continues at the right
+step, but augmentation and stochastic depth draw new random numbers.
+
+**Check:** run A trained 4 steps straight. Run B paused after step 2,
+resumed, and paused after step 4. Both must end with identical weights,
+optimizer state, random-generator states and training records (see below).
+
+### Dashboard
+
+- **Header:** a model-system dropdown (KeyboardNet, MorphNet), then
+  versions / experiments. A live run is listed first, opened by default and
+  marked by a green pulsing **LIVE training** pill. When you look at an older
+  run, a green **Go to live training** button jumps back.
+- **Live status:** a run counts as live only if its PID is a Python process
+  running a training script. Windows reuses process IDs, which once made the
+  dead v3 run look alive.
+- **Listening:** every audio player has a spectrogram of that file under it
+  (sharp or exact-samples picture, mid channel, 27 Hz–21 kHz, hoverable). The
+  server renders it from the WAV's exact wavelet image at the canvas's pixel
+  size.
+- **Links:** `?run=morph/v1` (or any run name) opens a specific run.
+
 ## Limits to keep in mind
 
 - **"Voice" rests on two voices.** The leave-one-singer-out check says how

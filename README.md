@@ -1,5 +1,11 @@
 # wavelet2vec
 
+**v0.35.0 adds portable separator inference bundles.** Versioned architecture,
+checked weights, native precision, source order and render defaults travel
+together, with a dedicated inspect/render CLI. See
+[inference bundles](docs/INFERENCE_BUNDLES.md). These packages contain your
+model weights; no pretrained separation quality is implied.
+
 **v0.34.0 adds bounded file-to-file source rendering.** Native floating-point
 audio is processed with rolling overlap buffers, cancellation, staged stem
 publication and RF64 for large outputs. The same core serves tensor inference.

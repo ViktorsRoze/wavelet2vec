@@ -292,6 +292,15 @@ class SeparationTrainingRun:
         return evaluate_separation(self.model, self.validation, fft_sizes=self.config.fft_sizes,
                                    waveform_weight=self.config.waveform_weight, spectral_weight=self.config.spectral_weight)
 
+    def export_bundle(self, path, *, render_config, overwrite=False):
+        """Export inference weights and recorded training provenance, without optimizer state."""
+        if self._busy or self._failed:
+            raise ValueError("export only from a stable training run")
+        from wavelet2vec.inference_bundle import save_separator_bundle
+        return save_separator_bundle(path, self.model, render_config=render_config, overwrite=overwrite,
+            metadata={"training": {"update_step": self.update_step, "config": self.config.to_dict(),
+                                   "data": self._identity()}})
+
 
 @torch.no_grad()
 def evaluate_separation(model, dataset, *, fft_sizes=(256, 1024), waveform_weight=1., spectral_weight=1.):

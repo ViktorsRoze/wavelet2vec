@@ -213,9 +213,14 @@ from wavelet2vec.rendering import (
     SourceRenderConfig, SeparationCancelled, FileSeparationResult, iter_separate_reader, separate_file,
 )
 
-__version__ = "0.34.0"
+from wavelet2vec.inference_bundle import (
+    SeparatorBundle, save_separator_bundle, load_separator_bundle, inspect_separator_bundle,
+)
+
+__version__ = "0.35.0"
 
 __all__ = [
+    "SeparatorBundle", "save_separator_bundle", "load_separator_bundle", "inspect_separator_bundle",
     "SourceRenderConfig", "SeparationCancelled", "FileSeparationResult", "iter_separate_reader", "separate_file",
     "MultitrackRecord", "MultitrackManifest", "MultitrackWindow", "MultitrackDataset", "collate_multitracks",
     "SeparationRunConfig", "SeparationTrainingRun", "evaluate_separation",

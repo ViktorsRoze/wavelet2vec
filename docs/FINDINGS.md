@@ -1,5 +1,11 @@
 # Verified Findings — lab notebook
 
+**2026-09-22, v0.35.0:** [Inference bundles](INFERENCE_BUNDLES.md) preserve
+CPU predictions exactly across all three backends in float32/float64 tests,
+with CUDA loading checked within tolerance. Artifact validation and native
+file-render integration are dataset-independent; no musical-quality claim
+follows from packaging or round-trip equality.
+
 **2026-09-22, v0.34.0:** [Bounded rendering](BOUNDED_RENDERING.md) avoids
 retaining full input/output recordings in the file path. Generated 192 kHz
 signals of 0.25 and 10 seconds use the same maximum model-window length;

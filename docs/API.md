@@ -1,5 +1,10 @@
 # wavelet2vec — API Reference
 
+v0.35.0 adds `SeparatorBundle`, `save_separator_bundle`,
+`inspect_separator_bundle`, `load_separator_bundle`, and
+`SeparationTrainingRun.export_bundle`. [INFERENCE_BUNDLES.md](INFERENCE_BUNDLES.md)
+defines portable architecture/weight artifacts and the inspect/render CLI.
+
 v0.34.0 adds `SourceRenderConfig`, `iter_separate_reader`, `separate_file`,
 `FileSeparationResult` and `SeparationCancelled`.
 [BOUNDED_RENDERING.md](BOUNDED_RENDERING.md) defines rolling audio buffers,

@@ -1,5 +1,9 @@
 # Verified multitrack training — v0.33.0
 
+**v0.35.0 update:** Stable runs can call `export_bundle` to create a
+[portable inference artifact](INFERENCE_BUNDLES.md) with update/data provenance.
+Strict training checkpoint/resume semantics are unchanged.
+
 **v0.34.0 update:** [Bounded file rendering](BOUNDED_RENDERING.md) is now
 available independently of the crop evaluator described below. Full-song
 perceptual evaluation still requires appropriate musical examples.

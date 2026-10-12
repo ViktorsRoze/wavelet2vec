@@ -295,6 +295,39 @@ float32 is exact for PCM_24; a float32 load of PCM_32 raises unless
 `quantize_pcm(waveform, bits, dither=None, seed=None, clip=False)` exposes the
 same quantizer, returning left-justified int32 codes.
 
+## Lossless stereo wavelet image
+
+```python
+from wavelet2vec.wavelet_image import WaveletImageSpec, encode, decode, save_image, load_image, magnitude_view
+
+spec = WaveletImageSpec(sample_rate=192000, n_frames=120)   # 149 semitone rows x 10 ms frames
+image = encode(audio, spec)        # audio [B, 2 (L, R), 230400] -> exact complex cells, mid/side
+audio_back = decode(image)         # exact inverse: ~305 dB in float64, ~130 dB in float32
+save_image(image, "note_img/")     # float32 TIFF per octave group + JSON; load_image() inverts
+view = magnitude_view(image)       # [B, 2, 149, 120] cell levels in dB, for display
+```
+
+`image.groups[c]` holds the cells with `c` complex samples per 10 ms:
+`[B, 2, rows, frames, c]`. There is one group per upper octave, and `c`
+doubles per octave. See [WAVELET_IMAGE.md](WAVELET_IMAGE.md).
+
+Pictures at any resolution, from every sample (for display only):
+
+```python
+from wavelet2vec.wavelet_image import detail_view, stereo_view
+
+db = detail_view(image, mode="sharp", channel="mid",        # or exact / cells; mid, side, left, right
+                 time_range=(0.0, 0.3), midi_range=(40, 100), width=1600, height=700)   # [700, 1600] dB
+level_db, balance, correlation = stereo_view(image, mode="sharp", width=1600, height=700)
+```
+
+- `sharp`: reassigned to each sample's instantaneous frequency and group
+  delay, in proportion to how well neighbouring bands agree.
+- `exact`: each band at its own time resolution.
+- `cells`: the backbone's 10 ms × semitone grid.
+
+Row 0 is the lowest pitch.
+
 ## Tools: vocal detector
 
 `wavelet2vec.tools` holds analysis tools. `detect_vocal_parts` labels a

@@ -26,7 +26,7 @@ def threads():
 
 
 @pytest.mark.parametrize("backend", ["wavelet", "compact_wavelet", "stft"])
-@pytest.mark.parametrize("rate", [48000, 96000, 192000])
+@pytest.mark.parametrize("rate", [48000, 96000, 192000, 352800])
 @pytest.mark.parametrize("n", [1, 127, 256])
 def test_initialized_source_synthesis_stereo_endpoints_and_precision(backend, rate, n):
     torch.manual_seed(n)
@@ -137,7 +137,7 @@ def test_ragged_batch_padding_is_excluded_from_model_and_gradients():
 
 
 @pytest.mark.parametrize("backend", ["wavelet", "compact_wavelet", "stft"])
-@pytest.mark.parametrize("rate", [96000, 192000])
+@pytest.mark.parametrize("rate", [96000, 192000, 352800])
 def test_chunked_stereo_identity_length_metadata_and_mode_restoration(backend, rate):
     model = HybridSeparator(config(backend, rate), SynthesisConfig(dim=8)).double()
     model.train()
@@ -175,7 +175,7 @@ def test_serialization_guards_and_memory_grid_validation():
         separate_audio(model, encoding.waveform, window_samples=65, overlap_samples=16)
 
 
-@pytest.mark.parametrize("rate", [48000, 96000, 192000])
+@pytest.mark.parametrize("rate", [48000, 96000, 192000, 352800])
 def test_high_rate_near_nyquist_dc_and_weak_signal_identity(rate):
     cfg = config("compact_wavelet", rate)
     model = HybridSeparator(cfg, SynthesisConfig(source_names=("identity",), dim=8)).double()

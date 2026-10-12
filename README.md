@@ -35,6 +35,8 @@ quality remains unevaluated.
 **High-resolution target: up to 192 kHz, 32-bit floating-point audio.**
 [The format contract](docs/HIGH_RESOLUTION_AUDIO.md) covers native-rate
 ingestion, model I/O, explicit float WAV export and current numerical tests.
+**DXD** (352.8 kHz, 24/32-bit integer PCM) files load and save bit-exactly
+through `wavelet2vec.dxd` ([DXD section](docs/HIGH_RESOLUTION_AUDIO.md#dxd-3528-khz-integer-pcm)).
 
 **v0.32.0 adds trainable source synthesis.** Complex masks on physical carrier
 grids, an optional waveform residual and a supervised separator connect

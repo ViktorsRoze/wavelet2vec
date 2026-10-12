@@ -51,6 +51,58 @@ accordingly. The example above preserves hop/padding duration relative to
 128/512 samples at 48 kHz; it is not a trained quality preset. Increasing the
 rate changes bandwidth, workload and potentially checkpoint dimensions.
 
+## DXD: 352.8 kHz integer PCM
+
+DXD (Digital eXtreme Definition) is 352,800 samples/second (8 x 44.1 kHz)
+PCM stored as **24- or 32-bit signed integers**, normally in WAV/RF64, and
+sometimes in FLAC (24-bit only) or AIFF. `wavelet2vec.dxd` handles these files
+without losing any bits. Model computation still uses the float contract above.
+
+```python
+from wavelet2vec import load_dxd, save_dxd, dxd_info, dxd_hybrid_config, HybridSeparator, SynthesisConfig
+
+info = dxd_info("master.wav")                 # .is_dxd, .bits, .frames, .duration_s
+audio, info = load_dxd("master.wav")          # float64 [channels, samples], exact
+save_dxd("copy.wav", audio, bits=info.bits)   # identical integer samples
+
+model = HybridSeparator(dxd_hybrid_config(), SynthesisConfig(dim=32))
+```
+
+Rules:
+
+- **Exact load.** Samples are `integer / 2**(bits-1)`, computed from the
+  stored integers. float64 is exact for both depths. float32 is exact for
+  24-bit. For 32-bit it drops up to 8 bits, so `load_dxd(..., dtype=np.float32)`
+  raises unless `allow_precision_loss=True`. The generic `load_audio` always
+  returns float32. Use `load_dxd` when 32-bit DXD must stay exact.
+- **Explicit quantization.** `save_dxd` rounds to the nearest integer code.
+  Full scale is `2**(bits-1)`, so +1.0 is *not* representable (the largest
+  code is `1 - 2**-(bits-1)`). Out-of-range samples raise instead of being
+  clipped silently. By default, libsndfile clips on float-to-integer writes and
+  truncates on 24-bit integer writes, and this module avoids both.
+  `clip=True` and seeded `dither="tpdf"` are opt-in.
+- **No implicit resampling.** `save_dxd` writes only 352.8 kHz. Other rates must
+  be converted deliberately with `audio_io.resample`, for example
+  44.1/88.2/176.4 kHz to DXD with the integer ratios 8/4/2.
+- **Containers.** The container follows the file extension. A `.wav` larger
+  than the conservative RIFF limit switches to RF64 automatically. FLAC
+  rejects `bits=32`.
+- **Frontend preset.** `dxd_hybrid_config()` uses `hop_length=1024` and
+  `padding_samples=4096`: exactly 128/512 samples at 44.1 kHz, scaled by 8.
+  It sets the resolution only and is not a trained preset. Wavelet2Vec
+  embeddings downsample 352.8 kHz by exactly 16 to reach their 22,050 Hz
+  analysis rate.
+- **Rendering.** `separate_file` accepts DXD inputs directly because it
+  refuses only rate/channel mismatches. For a float32 model, a PCM_32 input is
+  read as float32. Stem export stays FLOAT/DOUBLE by design. To deliver
+  integer DXD stems, load the rendered float stems and pass them through
+  `save_dxd`, which fails if any stem exceeds full scale.
+
+`tests/test_dxd.py` covers bit-exact WAV/FLAC/AIFF round trips at both depths,
+rounding, refusal to clip, seeded dither, header validation, RF64 selection,
+embeddings from a DXD file, and a native-rate separator rendering a DXD file.
+The source-synthesis identity tests also run at 352,800 Hz.
+
 ## Qualification recorded so far
 
 The expanded source-synthesis suite has **51 passing tests**. Added checks

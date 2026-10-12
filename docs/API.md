@@ -275,6 +275,26 @@ always included); each note's ADSR is gated to its slice length.
 WAV/AIFF by default (FLAC falls back to 24-bit); pass `subtype="PCM_16"` etc.
 to override.
 
+### DXD (352.8 kHz, 24/32-bit PCM)
+
+```python
+from wavelet2vec import load_dxd, save_dxd, dxd_info, dxd_hybrid_config
+
+info = dxd_info("take.wav")            # DXDInfo(sample_rate, channels, frames, subtype, format)
+audio, info = load_dxd("take.wav")     # [channels, samples] float64, exact integer/2**(bits-1)
+save_dxd("out.wav", audio, bits=24)    # or bits=32; dither="tpdf", seed=..., clip=True are opt-in
+frontend = dxd_hybrid_config()         # HybridConfig at 352800 Hz, hop 1024, padding 4096
+```
+
+`load_dxd(path, dtype=np.float64, allow_precision_loss=False, strict=True)`:
+float32 is exact for PCM_24; a float32 load of PCM_32 raises unless
+`allow_precision_loss=True`. `strict=False` accepts other integer-PCM files.
+`save_dxd` rounds to nearest, refuses samples outside the integer range
+(+1.0 included) unless `clip=True`, picks the container from the extension
+(large `.wav` becomes RF64; FLAC is 24-bit only) and verifies the header.
+`quantize_pcm(waveform, bits, dither=None, seed=None, clip=False)` exposes the
+same quantizer, returning left-justified int32 codes.
+
 ## Invertible frame + GPU backend
 
 ```python
@@ -388,6 +408,7 @@ Every embedding feature is importable directly for custom pipelines:
 | `wavelet2vec.slicing` | `slice_grid`, `slice_markers`, `slice_cues`, `slice_onsets`, `read_cue_points` |
 | `wavelet2vec.perform` | `perform` |
 | `wavelet2vec.audio_io` | `load_audio`, `save_audio`, `resample`, `list_audio_files` |
+| `wavelet2vec.dxd` | `DXD_SAMPLE_RATE`, `DXDInfo`, `dxd_info`, `load_dxd`, `save_dxd`, `quantize_pcm`, `dxd_hybrid_config` |
 
 ## CLI
 

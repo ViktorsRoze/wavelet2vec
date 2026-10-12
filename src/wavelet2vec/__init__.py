@@ -38,6 +38,9 @@ from wavelet2vec.datasets import (
     sine_distortion_ladder,
 )
 from wavelet2vec.decompose import hpss, shape_transients, transient_split
+from wavelet2vec.dxd import (
+    DXD_SAMPLE_RATE, DXDInfo, dxd_hybrid_config, dxd_info, load_dxd, quantize_pcm, save_dxd,
+)
 from wavelet2vec.embedder import (
     EMBEDDING_VERSION,
     Wavelet2Vec,
@@ -224,6 +227,7 @@ from wavelet2vec.study import PercussionStudy, create_percussion_study
 __version__ = "0.37.0"
 
 __all__ = [
+    "DXD_SAMPLE_RATE", "DXDInfo", "dxd_hybrid_config", "dxd_info", "load_dxd", "quantize_pcm", "save_dxd",
     "PercussionStudy","create_percussion_study",
     "detect_percussive_events", "compare_percussive_events", "analyze_drum_track",
     "SeparatorBundle", "save_separator_bundle", "load_separator_bundle", "inspect_separator_bundle",

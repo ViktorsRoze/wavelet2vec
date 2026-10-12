@@ -1,0 +1,19 @@
+{
+  "scope": "Native real-data tooling and speed check; four-update models do not assess musical separation quality.",
+  "implementation": "06d70dfb99dcce6cf68fb4caf5e0e77d2f20a3eeb75b47cb0d1b46c5265d192d",
+  "audit_cold_seconds": 16.816956000053324,
+  "audit_warm_seconds": 0.0619708999292925,
+  "cache_hits": 8,
+  "evaluation_seconds": 14.6363669000566,
+  "cached_evaluation_seconds": 0.26440909993834794,
+  "first_step": 1,
+  "resumed_step": 4,
+  "profile_before_seconds": 0.34760540002025664,
+  "profile_after_seconds": 0.2352499000262469,
+  "median_training_speedup": 1.477600628019286,
+  "cuda_launches_before": 13020,
+  "cuda_launches_after": 4246,
+  "peak_torch_bytes_before": 96883712,
+  "peak_torch_bytes_after": 95375872,
+  "profile_trace": "profiles\\a7d8ab5c325a93b5\\trace.json"
+}

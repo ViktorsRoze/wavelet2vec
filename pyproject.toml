@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelet2vec"
-version = "0.36.0"
+version = "0.37.0"
 description = "Deterministic, phase-aware musical embeddings for short audio snippets, built on constant-Q Morlet wavelets."
 readme = "README.md"
 license = { text = "MIT" }
@@ -37,6 +37,7 @@ Homepage = "https://github.com/viktorsroze/wavelet2vec"
 [project.scripts]
 wavelet2vec = "wavelet2vec.cli:main"
 wavelet2vec-separate = "wavelet2vec.inference_cli:main"
+wavelet2vec-study = "wavelet2vec.study_cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

@@ -1,0 +1,252 @@
+{
+  "format": "percussion-study-v1",
+  "group_id": "single-drum-performance-bpm128",
+  "bpm": 128,
+  "bars": 4,
+  "train_bars": 3,
+  "quarter_beats_per_bar": 4,
+  "sample_rate": 44100,
+  "channels": 2,
+  "body_samples": 330750,
+  "train_end": 248062,
+  "master_processing": "User reports master limiter; settings unspecified.",
+  "additive": false,
+  "sources": [
+    {
+      "name": "bongos",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_bongos.wav",
+      "sha256": "ede315a867c054e00cdf75f2579ee964e96708e77774ee2abc25ecbf4a2b49ac",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 336995,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "clap",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_clap.wav",
+      "sha256": "d327d57bd0b49f335f1c940966ff4a8346ce14ca89db1e0d5e6332c81b3bc304",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 330965,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "closed_hihat",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_closed_hihat.wav",
+      "sha256": "41fd5c8306fc0ec4026359ee3eb25a045bf202447cef9e580de8c781977a80c5",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 331181,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "cow_bell",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_cow_bell.wav",
+      "sha256": "b5f5123e64235c20844b1242af22e92f5dabf26124c9584098aa2f4c31d4dbd6",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 332042,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_kick_drum.wav",
+      "sha256": "17e1b1598cf1076702d88a4146f53c0953522c327471761e620cd46451d10168",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 330965,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "open_hihat",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_open_hihat.wav",
+      "sha256": "29d18a19fd5a172219c8d90a70fad1585b89b247d30a7d250cdf1e8d9a7592e7",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 338933,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "snare",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_snare.wav",
+      "sha256": "ae8aceef153b330ff40caa65df03000d302cf8b51ba042e23a23b7a9d17b111f",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 330965,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "tom",
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\only_tom.wav",
+      "sha256": "ef4d53dab0086b78f24194781f7b9da7af2d3bcd0fa670156e2f9b31457d9fbb",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 336349,
+      "subtype": "PCM_16"
+    }
+  ],
+  "mixtures": [
+    {
+      "name": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell",
+      "sources": [
+        "kick_drum",
+        "snare",
+        "clap",
+        "open_hihat",
+        "tom",
+        "closed_hihat",
+        "bongos",
+        "cow_bell"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos+cow_bell.wav",
+      "sha256": "86d8ed06590a2a58a81219e7b32a3ad5b2f3d12f028f446dd2e2f9b1cccc68b1",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 338717,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos",
+      "sources": [
+        "kick_drum",
+        "snare",
+        "clap",
+        "open_hihat",
+        "tom",
+        "closed_hihat",
+        "bongos"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare+clap+open_hihat+tom+closed_hihat+bongos.wav",
+      "sha256": "42c680e5c749e2f540e497711636791785d45ebaa3f310fac0f939c1f8a1b960",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 338717,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum+snare+clap+open_hihat+tom+closed_hihat",
+      "sources": [
+        "kick_drum",
+        "snare",
+        "clap",
+        "open_hihat",
+        "tom",
+        "closed_hihat"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare+clap+open_hihat+tom+closed_hihat.wav",
+      "sha256": "a63bff4377e66bde71270c9ea294be022152b5e1cd110333e897c245416bdbf4",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 338933,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum+snare+clap+open_hihat+tom",
+      "sources": [
+        "kick_drum",
+        "snare",
+        "clap",
+        "open_hihat",
+        "tom"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare+clap+open_hihat+tom.wav",
+      "sha256": "59cca4bff0b6e3d394064d874003e1453e90c5fef98714a9d1e8d6d7136b543f",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 339148,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum+snare+clap+open_hihat",
+      "sources": [
+        "kick_drum",
+        "snare",
+        "clap",
+        "open_hihat"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare+clap+open_hihat.wav",
+      "sha256": "35f5e235dde278ad97edbcc1fe09e7776bc5562035e20c62c6ebebf2f8ad54bc",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 338717,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum+snare+clap",
+      "sources": [
+        "kick_drum",
+        "snare",
+        "clap"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare+clap.wav",
+      "sha256": "f6caca029e7628b3647b0343d7ceeafbe97eeb7acc673e2b5bda1bfebeb7a96b",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 330965,
+      "subtype": "PCM_16"
+    },
+    {
+      "name": "kick_drum+snare",
+      "sources": [
+        "kick_drum",
+        "snare"
+      ],
+      "path": "..\\..\\..\\drum_substem_dataset_BPM128_4bars\\kick_drum+snare.wav",
+      "sha256": "ab9874018e23bd7cbe5085fc14c226aba65a70bcfa87b2c248cbfa3f87c9d12e",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 330965,
+      "subtype": "PCM_16"
+    }
+  ],
+  "analysis": {
+    "sensitivity": 0.92,
+    "min_spacing_seconds": 0.07
+  },
+  "max_analysis_bytes": 536870912,
+  "max_evaluation_bytes": 536870912,
+  "variants": {
+    "baseline": {
+      "backend": "compact_wavelet",
+      "bands": 32,
+      "q": 2.0,
+      "dim": 32,
+      "window_seconds": 0.2,
+      "crops_per_mixture": 24,
+      "batch_size": 2,
+      "steps": 4,
+      "learning_rate": 0.001,
+      "seed": 17,
+      "data_seed": 101,
+      "balance_sources": false
+    },
+    "fine": {
+      "backend": "compact_wavelet",
+      "bands": 96,
+      "q": 8.0,
+      "dim": 32,
+      "window_seconds": 0.2,
+      "crops_per_mixture": 24,
+      "batch_size": 2,
+      "steps": 300,
+      "learning_rate": 0.001,
+      "seed": 17,
+      "data_seed": 101,
+      "balance_sources": false
+    },
+    "balanced": {
+      "backend": "compact_wavelet",
+      "bands": 32,
+      "q": 2.0,
+      "dim": 32,
+      "window_seconds": 0.2,
+      "crops_per_mixture": 24,
+      "batch_size": 2,
+      "steps": 300,
+      "learning_rate": 0.001,
+      "seed": 17,
+      "data_seed": 101,
+      "balance_sources": true
+    }
+  }
+}

@@ -1,5 +1,9 @@
 # wavelet2vec — API Reference
 
+v0.37.0 adds `create_percussion_study` and `PercussionStudy`, with the
+`wavelet2vec-study` CLI. [REUSABLE_STUDIES.md](REUSABLE_STUDIES.md) covers
+project discovery, cache/preparation reuse, resume, evaluation and profiling.
+
 v0.36.0 adds `detect_percussive_events`, `compare_percussive_events`,
 `analyze_drum_track` and optional `source_weights` in `separation_loss` /
 `SeparationRunConfig`. [DRUM_ANALYSIS.md](DRUM_ANALYSIS.md) defines their

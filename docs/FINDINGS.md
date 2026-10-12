@@ -1,5 +1,11 @@
 # Verified Findings — lab notebook
 
+**2026-09-27, v0.37.0:** [Profiling and reuse](PERFORMANCE_STRATEGY.md)
+reduce closed-hi-hat analysis from median 5.85 to 4.84 seconds and a native
+96-band update from 0.348 to 0.235 seconds on the local GPU. CUDA launches
+fall from 13,020 to 4,246. Verified repeat audits avoid re-analysis. Native
+extensions remain targeted follow-up options; none are claimed as implemented.
+
 **2026-09-23, v0.36.0:** [Real drum-substem findings](DRUM_DATASET_FINDINGS.md)
 record 212 automatically detected solo events, native-rate supervised runs
 and source-level failures. The Q8/96-band model improves complete-mix raw

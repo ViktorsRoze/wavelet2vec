@@ -1,0 +1,28 @@
+         2304045 function calls in 5.568 seconds
+
+   Ordered by: cumulative time
+   List reduced from 289 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.007    0.007    5.568    5.568 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:174(analyze_drum_track)
+     1102    0.072    0.000    4.917    0.004 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:86(compare_percussive_events)
+    30770    1.039    0.000    2.946    0.000 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:120(direct)
+     1838    0.202    0.000    2.673    0.001 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:2289(_minimize_scalar_bounded)
+     4238    0.208    0.000    1.716    0.000 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:127(coarse)
+    74424    0.082    0.000    1.466    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\numpy\lib\_function_base_impl.py:1538(interp)
+     1102    0.008    0.000    1.458    0.001 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_minimize.py:831(minimize_scalar)
+    74424    1.332    0.000    1.332    0.000 {built-in method numpy._core._multiarray_umath.interp}
+    13496    0.010    0.000    1.322    0.000 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:138(<lambda>)
+       64    0.001    0.000    1.319    0.021 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_minimize.py:54(minimize)
+       64    0.005    0.000    1.312    0.020 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:3413(_minimize_powell)
+      736    0.006    0.000    1.266    0.002 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:3214(_linesearch_powell)
+    11934    0.023    0.000    1.143    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:555(function_wrapper)
+    11626    0.023    0.000    1.135    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:3235(myfunc)
+    11934    0.012    0.000    1.100    0.000 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:148(<lambda>)
+        1    0.015    0.015    0.637    0.637 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:26(detect_percussive_events)
+        1    0.013    0.013    0.598    0.598 {built-in method builtins.sum}
+        3    0.014    0.005    0.586    0.195 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:50(<genexpr>)
+        2    0.017    0.008    0.572    0.286 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\filterbank.py:60(morlet_scalogram)
+        2    0.197    0.099    0.546    0.273 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\filterbank.py:25(analytic_band_signals)
+
+

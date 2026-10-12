@@ -228,3 +228,36 @@ def test_192khz_float32_file_corpus_synthesis_training_and_export(tmp_path, back
     decoded, decoded_rate = load_audio(destination)
     assert decoded_rate == rate and sf.info(destination).subtype == "FLOAT"
     np.testing.assert_array_equal(decoded.view(np.uint32), output.view(np.uint32))
+
+
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA unavailable"))])
+def test_grouped_compact_decoder_matches_per_band_outputs_and_gradients(device):
+    from wavelet2vec.synthesis import _interpolate
+    torch.manual_seed(44)
+    cfg = replace(config(), n_bands=32, q=2)
+    audio = torch.randn(1, 2, 259, dtype=torch.float64, device=device, requires_grad=True)
+    encoding = HybridAudioFrontend(cfg)(audio)
+    decoder = HybridSourceDecoder(cfg, SynthesisConfig(dim=8, waveform_residual=False)).double().to(device)
+    with torch.no_grad():
+        decoder.mask_head.weight.normal_(0, .02)
+    count = (audio.shape[-1]+cfg.hop_length-1)//cfg.hop_length
+    tokens = torch.randn(1, count, 8, dtype=torch.float64, device=device, requires_grad=True)
+    actual = decoder(tokens, encoding, return_coefficients=True)
+    raw = decoder.mask_head(tokens).reshape(1, count, 2, 2, cfg.bands, 2)
+    masks = torch.complex(raw[..., 0], raw[..., 1]).permute(0, 2, 3, 4, 1)+.5
+    starts = torch.arange(count, dtype=torch.float64, device=device)*cfg.hop_length
+    centers = starts+(audio.shape[-1]-starts).clamp(max=cfg.hop_length)/2
+    expected_bands = []
+    for k, coefficient in enumerate(encoding.coefficients):
+        times = torch.arange(coefficient.shape[-1], dtype=torch.float64, device=device)*(audio.shape[-1]+2*cfg.padding)/coefficient.shape[-1]-cfg.padding
+        expected_bands.append(coefficient[:, None]*_interpolate(masks[..., k, :], centers, times))
+    expected = encoding.synthesize(tuple(expected_bands))
+    torch.testing.assert_close(actual.waveform, expected, rtol=1e-10, atol=1e-11)
+    for left, right in zip(actual.coefficients, expected_bands):
+        torch.testing.assert_close(left, right, rtol=1e-10, atol=1e-11)
+    parameters = [tokens, audio, *decoder.parameters()]
+    reference = torch.randn_like(expected)
+    gradient_actual = torch.autograd.grad((actual.waveform-reference).square().mean(), parameters, retain_graph=True)
+    gradient_expected = torch.autograd.grad((expected-reference).square().mean(), parameters)
+    for left, right in zip(gradient_actual, gradient_expected):
+        torch.testing.assert_close(left, right, rtol=1e-8, atol=1e-10)

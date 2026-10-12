@@ -1,0 +1,20 @@
+{
+  "before_seconds": [
+    5.8980069000972435,
+    5.852530700038187,
+    5.854418099974282
+  ],
+  "after_seconds": [
+    4.78246749995742,
+    4.83850239997264,
+    4.839535800041631
+  ],
+  "median_speedup": 1.2099649056715125,
+  "maximum_numerical_differences": {
+    "best_candidate_semitones": 0.0,
+    "waveform_fit": 0.0,
+    "lag_samples": 0.0,
+    "zero_pitch_fit": 0.0
+  },
+  "same_onsets_and_repeat_groups": true
+}

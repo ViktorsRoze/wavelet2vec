@@ -1,0 +1,25 @@
+{
+  "scope": "Real-data workflow correctness/performance smoke; four baseline updates do not evaluate separation quality.",
+  "implementation": "0e21cffd5245bceb94a0e5b00e71728f902c2b33e054318f70874ddecb60ddf3",
+  "cold_audit_seconds": 15.97161240002606,
+  "warm_audit_seconds": 0.05913399998098612,
+  "warm_cache_hits": 8,
+  "event_counts": {
+    "bongos": 42,
+    "clap": 9,
+    "closed_hihat": 64,
+    "cow_bell": 42,
+    "kick_drum": 16,
+    "open_hihat": 16,
+    "snare": 8,
+    "tom": 15
+  },
+  "first_step": 1,
+  "resumed_step": 4,
+  "evaluation_seconds": 14.234363200026564,
+  "cached_evaluation_seconds": 0.22215229994617403,
+  "evaluation_cache_hit": true,
+  "profile_median_update_seconds": 0.34760540002025664,
+  "profile_peak_torch_bytes": 96883712,
+  "profile_trace": "profiles\\a7d8ab5c325a93b5\\trace.json"
+}

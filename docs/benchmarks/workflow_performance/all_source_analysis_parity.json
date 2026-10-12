@@ -1,0 +1,53 @@
+{
+  "implementation": "06d70dfb99dcce6cf68fb4caf5e0e77d2f20a3eeb75b47cb0d1b46c5265d192d",
+  "sources": {
+    "bongos": {
+      "events": 42,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "clap": {
+      "events": 9,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "closed_hihat": {
+      "events": 64,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "cow_bell": {
+      "events": 42,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "kick_drum": {
+      "events": 16,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "open_hihat": {
+      "events": 16,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "snare": {
+      "events": 8,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    },
+    "tom": {
+      "events": 15,
+      "same_onsets_and_repeat_groups": true,
+      "max_pitch_difference": 0.0,
+      "max_fit_difference": 0.0
+    }
+  }
+}

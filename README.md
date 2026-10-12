@@ -1,5 +1,12 @@
 # wavelet2vec
 
+**v0.37.0 streamlines repeated studies and reduces measured overhead.**
+`wavelet2vec-study` provides project discovery, checked caches, shared data
+preparation, automatic resume, evaluation/listening reports and profiling.
+Event matching reuses FFTs; compact-wavelet source decoding groups equal grids.
+See [reusable studies](docs/REUSABLE_STUDIES.md) and
+[performance/native-code strategy](docs/PERFORMANCE_STRATEGY.md).
+
 **v0.36.0 runs the first real drum-substem experiment.** New event/reference
 diagnostics and optional source-balanced losses support measured tests on
 eight solos and seven mixes. The pipeline runs; quiet-drum separation remains

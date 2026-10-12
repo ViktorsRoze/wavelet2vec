@@ -1,0 +1,28 @@
+         4457177 function calls (4457069 primitive calls) in 7.131 seconds
+
+   Ordered by: cumulative time
+   List reduced from 322 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.008    0.008    7.131    7.131 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:168(analyze_drum_track)
+     1102    0.066    0.000    6.506    0.006 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:85(compare_percussive_events)
+     4238    0.199    0.000    3.391    0.001 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:122(coarse)
+    30770    1.050    0.000    2.937    0.000 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:115(direct)
+     1838    0.205    0.000    2.664    0.001 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:2289(_minimize_scalar_bounded)
+     8476    0.021    0.000    2.037    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\signal\_signaltools.py:104(correlate)
+     8476    0.070    0.000    1.922    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\signal\_signaltools.py:1377(convolve)
+     8476    0.036    0.000    1.655    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\signal\_signaltools.py:591(fftconvolve)
+     1102    0.008    0.000    1.460    0.001 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_minimize.py:831(minimize_scalar)
+    74424    0.083    0.000    1.450    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\numpy\lib\_function_base_impl.py:1538(interp)
+     8476    0.091    0.000    1.393    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\signal\_signaltools.py:487(_freq_domain_conv)
+    13496    0.011    0.000    1.321    0.000 C:\Users\vikto\PycharmProjects\wavelet2vec\src\wavelet2vec\drum_analysis.py:132(<lambda>)
+    74424    1.315    0.000    1.315    0.000 {built-in method numpy._core._multiarray_umath.interp}
+       64    0.001    0.000    1.309    0.020 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_minimize.py:54(minimize)
+       64    0.006    0.000    1.302    0.020 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:3413(_minimize_powell)
+      736    0.006    0.000    1.256    0.002 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:3214(_linesearch_powell)
+    25428    0.027    0.000    1.214    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\fft\_backend.py:19(__ua_function__)
+    25428    0.045    0.000    1.169    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\fft\_basic_backend.py:52(_execute_nD)
+    11934    0.023    0.000    1.131    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:555(function_wrapper)
+    11626    0.023    0.000    1.123    0.000 C:\Users\vikto\an3\envs\sound\Lib\site-packages\scipy\optimize\_optimize.py:3235(myfunc)
+
+

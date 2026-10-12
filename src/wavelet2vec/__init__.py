@@ -219,9 +219,12 @@ from wavelet2vec.inference_bundle import (
 
 from wavelet2vec.drum_analysis import detect_percussive_events, compare_percussive_events, analyze_drum_track
 
-__version__ = "0.36.0"
+from wavelet2vec.study import PercussionStudy, create_percussion_study
+
+__version__ = "0.37.0"
 
 __all__ = [
+    "PercussionStudy","create_percussion_study",
     "detect_percussive_events", "compare_percussive_events", "analyze_drum_track",
     "SeparatorBundle", "save_separator_bundle", "load_separator_bundle", "inspect_separator_bundle",
     "SourceRenderConfig", "SeparationCancelled", "FileSeparationResult", "iter_separate_reader", "separate_file",

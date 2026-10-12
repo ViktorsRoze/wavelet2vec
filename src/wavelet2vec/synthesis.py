@@ -136,13 +136,20 @@ class HybridSourceDecoder(nn.Module):
         masks = torch.complex(raw[..., 0], raw[..., 1]).permute(0, 2, 3, 4, 1) + 1 / sources
         if front.backend == "compact_wavelet":
             total = n + 2*front.padding
-            predicted = []
-            for k, coefficient in enumerate(encoding.coefficients):
+            predicted = [None] * len(encoding.coefficients)
+            # Bands sharing an FFT length also share physical sample times.
+            # Interpolate their masks together to avoid per-band indexing
+            # kernels and their repeated scatter-add backward operations.
+            for group in encoding.compact_groups:
+                indices = torch.tensor(group.band_indices, device=tokens.device, dtype=torch.long)
+                coefficient = torch.stack([encoding.coefficients[k] for k in group.band_indices], dim=-2)
                 # Relative coordinates avoid subtracting large absolute origins.
                 positions = (torch.arange(coefficient.shape[-1], device=tokens.device, dtype=torch.float64)
                              * (total / coefficient.shape[-1]) - front.padding)
-                mask = _interpolate(masks[..., k, :], centers, positions)
-                predicted.append(coefficient.unsqueeze(1) * mask)
+                mask = _interpolate(masks.index_select(-2, indices), centers, positions)
+                values = coefficient.unsqueeze(1) * mask
+                for k, value in zip(group.band_indices, values.unbind(-2)):
+                    predicted[k] = value
             predicted = tuple(predicted)
         else:
             positions = torch.arange(encoding.coefficients.shape[-1], device=tokens.device, dtype=torch.float64)

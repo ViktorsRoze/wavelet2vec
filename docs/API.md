@@ -295,6 +295,55 @@ float32 is exact for PCM_24; a float32 load of PCM_32 raises unless
 `quantize_pcm(waveform, bits, dither=None, seed=None, clip=False)` exposes the
 same quantizer, returning left-justified int32 codes.
 
+## Tools: vocal detector
+
+`wavelet2vec.tools` holds analysis tools. `detect_vocal_parts` labels a
+monophonic voice every 10 ms. It is algorithmic: no training, only signal
+measurements and published formant averages.
+
+```python
+from wavelet2vec.tools import detect_vocal_parts
+
+track = detect_vocal_parts(audio, sample_rate, scale=None)  # [samples] or [channels, samples]
+track.part            # silence / plosive / sibilant / vowel / voiced / breath / transition / other
+track.vowel           # on vowel frames: i (ee), e (ay), eh, a (ah), o (oh), u (oo)
+track.sibilant_type   # on sibilant frames: "s" or "sh"
+track.sibilance       # 0..1 share of energy above 2.5 kHz, every frame
+track.segments()      # merged runs: [{"start_s", "end_s", "part", "detail"}, ...]
+track.summarize(start_s, end_s)  # majority vowel, start/end vowel, parts, sibilant frames
+```
+
+How each part is decided:
+
+| Part | Rule |
+|---|---|
+| `silence` | More than `floor_db` (50) below the loudest frame, or room background more than `background_db` (30) below it |
+| `plosive` | A jump of ≥15 dB out of near-silence, with a flat (noise-like) spectrum |
+| `sibilant` | Most energy above 2.5 kHz, and that band noise-like; "s" if centred above 4.8 kHz, else "sh" |
+| `vowel` | Harmonic frame, judged against formant templates |
+| `voiced` | Harmonic, but too few harmonics to judge a vowel |
+| `breath` | Other noise (h, f, aspiration) |
+| `transition` | Unclear frames within 50 ms of a vowel: note onsets and endings |
+
+Vowels are judged from the harmonic spectral envelope, i.e. the levels of
+the harmonics k·f0. It is fitted against templates built from published
+formant averages (Peterson & Barney 1952, Hillenbrand et al. 1995). This
+keeps working at sung pitches, where LPC formant picking fails.
+
+`scale` is the vocal-tract length factor: 1.0 adult male, about 1.15–1.2
+adult female. Estimate it once per speaker and pass it to every call. A
+single-vowel recording can trade scale against vowel.
+
+**Measured accuracy:**
+- **Synthetic vowels** with shifted formants: 100 % up to 330 Hz f0, 85 % at
+  440–660 Hz.
+- **Shevannai** sung syllables: sibilants found in 123 of 126 notes that
+  contain them, with the right s/sh type. False alarms in 4 of 175 notes
+  that don't.
+
+Neighbouring vowels are confused first ("e"/"i", "o"/"u", "a"/"aw"),
+especially at high pitch and when singers darken vowels.
+
 ## Invertible frame + GPU backend
 
 ```python

@@ -846,6 +846,21 @@ starting point. A first experiment needs no new model:
 The learned version can then combine both purposes: create a hybrid at one
 or two notes, and let the keyboard generator produce the rest of its notes.
 
+### The learned version: MorphNet
+
+MorphNet started training on 9 October 2026; see
+[docs/MORPH_MODEL.md](../docs/MORPH_MODEL.md). It applies the points above:
+- judges see a confound-controlled view: mid channel, below 18 kHz,
+  normalized level, MIDI 36–82;
+- "vox present" and "synth present" are separate heads, trained against
+  noise;
+- a third judge is held out from training;
+- a leave-one-singer-out check;
+- every hybrid must stay away from the plain mix and from vocoders in both
+  directions;
+- a realism critic;
+- listening demos every epoch.
+
 ## Still unknown
 
 1. Which category (pluck, bass, bell, lead) each of the 50 unlabelled presets

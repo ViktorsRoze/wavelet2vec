@@ -328,6 +328,20 @@ level_db, balance, correlation = stereo_view(image, mode="sharp", width=1600, he
 
 Row 0 is the lowest pitch.
 
+## Vox–synth morph (MorphNet)
+
+```python
+from wavelet2vec.morph import MorphNet, judge_view, JudgeCNN, mix_baseline, vocoder_baseline
+
+hybrid, extras = MorphNet()(vocal_image, synth_image, alpha)   # same key, loudness-matched; exact cells out
+view = judge_view(hybrid)       # [B, 4, 120, 120]: mid, below 18 kHz, level re peak, coherence, modulation
+logits, embedding = JudgeCNN()(view)                           # (vox present, synth present), 128-dim
+```
+
+`mix_baseline` and `vocoder_baseline` are the shortcuts a hybrid must avoid:
+the plain mix, and a carrier shaped per cell by another note's level.
+Training and design: [MORPH_MODEL.md](MORPH_MODEL.md).
+
 ## Tools: vocal detector
 
 `wavelet2vec.tools` holds analysis tools. `detect_vocal_parts` labels a

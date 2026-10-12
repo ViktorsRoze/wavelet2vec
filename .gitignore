@@ -33,3 +33,18 @@ example_audio/
 *.flac
 *.aif
 *.aiff
+
+# Model checkpoints, weights and profiles
+*.pt
+*.pth
+*.ckpt
+*.w2v
+*.prof
+
+# Datasets (only their READMEs are published)
+note_dataset/*
+!note_dataset/README.md
+drum_substem_dataset*/
+
+# Study workspaces (caches, traces, checkpoints)
+docs/benchmarks/workflow_performance/workspace*/

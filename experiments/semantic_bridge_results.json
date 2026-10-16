@@ -1,0 +1,90 @@
+{
+  "experiment_1_c1_degeneracy": {
+    "c1_band_count": 58,
+    "c1_freq_range_hz": [
+      16.35,
+      440.0
+    ],
+    "legacy": {
+      "tone_E1_coherence": 1.0,
+      "tone_A2_coherence": 1.0,
+      "tone_A3_coherence": 1.0,
+      "white_noise_c1_coherence": 1.0,
+      "tone_A2_mod_depth": 0.0,
+      "white_noise_c1_mod_depth": 0.0,
+      "tone_A2_harmonic_gate": 0.9734,
+      "white_noise_c1_harmonic_gate": 0.9734
+    },
+    "semantic_bridge": {
+      "tone_E1_coherence": 0.9932,
+      "tone_A2_coherence": 1.0,
+      "tone_A3_coherence": 1.0,
+      "white_noise_c1_coherence": 0.5975,
+      "tone_A2_mod_depth": 0.0006,
+      "white_noise_c1_mod_depth": 0.8411,
+      "tone_A2_harmonic_gate": 0.9734,
+      "white_noise_c1_harmonic_gate": 0.2795
+    }
+  },
+  "experiment_2_heisenberg_trap": {
+    "bass_register_hz": [
+      41.2,
+      164.8
+    ],
+    "single_impulse_30ms_energy_fraction": {
+      "raw_wavelet_power": 0.3774,
+      "reassigned_sharp_power": 0.9937,
+      "improvement_factor": 2.63
+    },
+    "single_impulse_rms_spread_ms": {
+      "raw_wavelet_power_ms": 38.3,
+      "reassigned_sharp_power_ms": 4.0
+    },
+    "double_impulse_60ms_peak_to_valley_db": {
+      "raw_wavelet_power_db": 2.31,
+      "reassigned_sharp_power_db": 5.35
+    },
+    "energy_conservation_ratio": 1.0
+  },
+  "experiment_3_jtfs_chirp_and_modulation": {
+    "up_vs_down_chirp": {
+      "marginal_1d_cosine_distance": 1e-06,
+      "jtfs_cosine_distance": 0.1661,
+      "full_embedding_cosine_distance": 0.0079,
+      "mean_jtfs_tilt_up": 0.3961,
+      "mean_jtfs_tilt_down": -0.4153
+    },
+    "fast_8hz_vs_slow_1p5hz_vibrato": {
+      "marginal_1d_cosine_distance": 0.000906,
+      "jtfs_cosine_distance": 0.0628,
+      "full_embedding_cosine_distance": 0.0081
+    }
+  },
+  "experiment_4_invariance_vs_sensitivity": {
+    "shift_2p7ms_similarity": {
+      "raw_complex_carrier_cosine": -0.291,
+      "semantic_embedding_cosine": 1.0
+    },
+    "shift_43ms_similarity": {
+      "raw_complex_carrier_cosine": -0.1218,
+      "semantic_embedding_cosine": 1.0
+    },
+    "phase_rotation_90deg_similarity": {
+      "raw_complex_carrier_cosine": 0.0,
+      "semantic_embedding_cosine": 1.0
+    },
+    "timbre_and_spatial_discrimination_cosine": {
+      "sine_vs_sawtooth_110hz": 0.8365,
+      "sine_vs_square_110hz": 0.9059,
+      "mono_vs_antiphase_stereo": -0.1854
+    }
+  },
+  "experiment_5_gradient_optimization": {
+    "optimization_steps": 25,
+    "initial_semantic_loss": 4.5363,
+    "final_semantic_loss": 3.8853,
+    "loss_reduction_pct": 14.35,
+    "initial_embedding_cosine": 0.33,
+    "final_embedding_cosine": 0.4529
+  }
+}

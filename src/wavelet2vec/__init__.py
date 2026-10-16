@@ -223,10 +223,28 @@ from wavelet2vec.inference_bundle import (
 from wavelet2vec.drum_analysis import detect_percussive_events, compare_percussive_events, analyze_drum_track
 
 from wavelet2vec.study import PercussionStudy, create_percussion_study
+from wavelet2vec.semantic_bridge import (
+    ReassignedPrimitives,
+    harmonic_noise_gate,
+    jtfs_modulation_spectrum,
+    reassigned_primitives,
+    scale_consistent_cell_stats,
+    semantic_planes,
+    semantic_structure_loss,
+    semantic_wavelet_embedding,
+)
 
 __version__ = "0.37.0"
 
 __all__ = [
+    "ReassignedPrimitives",
+    "harmonic_noise_gate",
+    "jtfs_modulation_spectrum",
+    "reassigned_primitives",
+    "scale_consistent_cell_stats",
+    "semantic_planes",
+    "semantic_structure_loss",
+    "semantic_wavelet_embedding",
     "DXD_SAMPLE_RATE", "DXDInfo", "dxd_hybrid_config", "dxd_info", "load_dxd", "quantize_pcm", "save_dxd",
     "PercussionStudy","create_percussion_study",
     "detect_percussive_events", "compare_percussive_events", "analyze_drum_track",

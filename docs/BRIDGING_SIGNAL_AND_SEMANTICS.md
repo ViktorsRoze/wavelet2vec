@@ -1,25 +1,35 @@
 # Bridging Lossless Complex Wavelet Signal Processing and Invariant Semantic Audio Understanding
 
+![Semantic Bridge Overview: Raw vs Reassigned Level and Legacy vs Scale-Consistent Coherence](figures/semantic_bridge_overview.png)
+
+*Figure 1 — Visual proof on a 192 kHz composite scene (broadband/bass click at $0.18\text{ s}$, harmonic sawtooth + sub-bass $55\text{ Hz}$ glide at $0.28–0.78\text{ s}$, and white-noise burst at $0.84–1.12\text{ s}$). **Top row (A vs. B):** Differentiable 2D reassignment (`sharp_db`, Plane 2) collapses the low-frequency Heisenberg pyramid ($38.30\text{ ms}$ RMS spread) into a $4.00\text{ ms}$ vertical attack edge ($99.37\%$ energy within $\pm 1$ frame) and focuses harmonic partials onto 1-pixel ridges while conserving $100.0\%$ of total energy. **Bottom row (C vs. D):** Legacy `_cell_stats` / `critic_view` suffers from the `c = 1` multirate cell degeneracy below $440\text{ Hz}$ (dashed line), saturating at `Coherence = 1.000` (solid yellow wall) even on pure white noise. Our Semantic Bridge (`phase_coherence`, Plane 3) cleanly separates tonal harmonics (`1.000`) from bass noise (`0.598`) all the way down to $16.35\text{ Hz}$.*
+
+---
+
 ## 1. Executive Summary: The Fundamental Dualism in Audio Representation
 
 A central open problem in modern audio representation is the mathematical tension between **exact, phase-preserving signal reconstruction** and **invariant, abstract semantic understanding**:
 
+```mermaid
+flowchart LR
+    A["192 kHz Stereo Audio\n[B, 2, 230400]"] --> B["Lossless WaveletImage Carrier\n149 Semitone Bands x 10 ms Frames\n(~305 dB float64 / ~132 dB float32)"]
+    B -->|"Exact Inverse (decode)"| C["Bit-Accurate Reconstructed Audio\n(~305 dB SNR)"]
+    B -->|"Band FFT Spectral Derivatives\ns0, s1 (d/dt), s2 (d/df)"| D["ReassignedPrimitives\nCohen-Mandel AM + Group Delay\n+ Cross-Band Agreements"]
+    D -->|"Differentiable 2D Bilinear Scatter\n+ Quadrature 2D JTFS Filters"| E["semantic_planes [B, 12, 149, 120]\n& harmonic_noise_gate [B, 149, 120]"]
+    E -->|"Multi-Register Pooling\n+ 2D JTFS Modulation Spectrum"| F["semantic_wavelet_embedding [B, 252]\n& semantic_structure_loss"]
+```
+
 1. **High-Fidelity Invertible Signal Processing (`WaveletImage`)**:
-   - Requires retaining exact local carrier phase $\phi(k, t)$, sub-sample timing offsets, and linear superposition across all bands so that the inverse transform recovers the 192 kHz stereo waveform to machine precision (~305 dB SNR in `float64`, ~132 dB SNR in `float32`).
-   - However, raw complex wavelet coefficients covary rapidly with nuisance transformations: shifting a 110 Hz note by just 2.7 ms rotates its complex carrier phase enough to flip the cosine similarity of its raw coefficients to **$-0.2910$**, and a $90^\circ$ phase rotation makes the raw complex vector strictly orthogonal ($\cos = 0.0000$).
+   - Retains exact local carrier phase $\phi(k, t)$, sub-sample timing offsets, and linear superposition across all 149 semitone bands so that `decode(encode(audio))` recovers the 192 kHz stereo waveform to machine precision (~305 dB SNR in `float64`, ~132 dB SNR in `float32`).
+   - However, raw complex wavelet coefficients covary rapidly with nuisance transformations: shifting a 110 Hz note by just $2.7\text{ ms}$ rotates its complex carrier phase enough to flip the cosine similarity of its raw coefficients to **$-0.2910$**, and a $90^\circ$ phase rotation makes the raw complex vector strictly orthogonal ($\cos = 0.0000$).
    - Simultaneously, constant-$Q$ semitone filters obey the **Heisenberg-Gabor uncertainty bound** $\sigma_t(f) \cdot \sigma_f(f) = \frac{1}{2\pi}$. At sub-bass and bass frequencies ($16.35\text{ Hz} \le f \le 165\text{ Hz}$), narrow semitone bandwidths ($\sigma_f \approx 0.4\text{ Hz} - 4\text{ Hz}$) force temporal impulse responses to ring across **$40\text{ ms} - 250\text{ ms}$**, smearing sharp percussive attacks across dozens of 10 ms frames (**The Low-Frequency Heisenberg Trap**).
 
-2. **Invariant Semantic Audio Understanding**:
-   - Requires representations that are invariant to global phase rotations and small time translations, yet hyper-sensitive to **harmonic ridge structure**, **sub-frame transient attack timing**, **tonal-vs-stochastic texture**, **spectro-temporal modulation trajectories** (upward vs. downward pitch glides, formant transitions, vibrato rates), and **stereo spatial coherence**.
-
-Because offline embedding generation, neural judge training, and interactive inspection in the audio editor can afford rich, exact spectral computation, we do not need to compromise between reconstruction and semantics. Instead, we introduce a **Dual-Layer Architecture** implemented in `src/wavelet2vec/semantic_bridge.py`:
-
-- **Layer 1 — Lossless Complex Carrier (`WaveletImage`)**: Retains the exact multirate complex coefficients $z_{k, m} \in \mathbb{C}$ across 149 semitone bands ($c \in \{1, 2, 4, \dots, 256\}$ samples per 10 ms frame) for bit-accurate synthesis and phase-locked editing.
-- **Layer 2 — Differentiable Reassigned & Scattering Semantic Bridge (`semantic_bridge.py`)**: Extracts exact spectral derivatives ($s_0, s_1, s_2$) via band-level FFTs in PyTorch, resolves the low-frequency `c = 1` cell degeneracy from first principles, performs differentiable 2D synchrosqueezed reassignment, and applies 2D Joint Time-Frequency Scattering (JTFS) to produce:
-  - `semantic_planes(image)` $\to$ `[B, 12, 149, 120]` differentiable feature planes for neural backbones, critics, diffusion models, and audio editor overlays.
-  - `semantic_wavelet_embedding(audio_or_image)` $\to$ `[B, 252]` shift-invariant, phase-rotation-invariant, timbre- and trajectory-discriminative vector embeddings.
-  - `harmonic_noise_gate(image)` $\to$ `[B, 149, T]` scale-consistent harmonic-vs-stochastic gate across all 149 bands.
-  - `semantic_structure_loss(pred, target)` $\to$ fully differentiable physical + perceptual training objective backpropagating cleanly to 192 kHz stereo waveforms.
+2. **Invariant Semantic Audio Understanding (`wavelet2vec.semantic_bridge`)**:
+   - Extracts exact spectral derivatives ($s_0, s_1, s_2$) via band-level FFTs in PyTorch, resolves the low-frequency `c = 1` cell degeneracy from first principles, performs differentiable 2D synchrosqueezed reassignment, and applies 2D Joint Time-Frequency Scattering (JTFS) to produce:
+     - `semantic_planes(image)` $\to$ `[B, 12, 149, 120]` differentiable feature planes for neural backbones, critics, diffusion models, and audio editor overlays.
+     - `semantic_wavelet_embedding(audio_or_image)` $\to$ `[B, 252]` shift-invariant, phase-rotation-invariant, timbre- and trajectory-discriminative vector embeddings.
+     - `harmonic_noise_gate(image)` $\to$ `[B, 149, T]` scale-consistent harmonic-vs-stochastic gate across all 149 bands.
+     - `semantic_structure_loss(pred, target)` $\to$ fully differentiable physical + perceptual training objective backpropagating cleanly to 192 kHz stereo waveforms.
 
 ---
 
@@ -29,7 +39,7 @@ During our line-by-line inspection of `wavelet_image.py`, `morph.py`, `morph_lar
 
 ### Finding 1: The `c = 1` Multirate Cell Degeneracy Bug (MIDI 12–69, $16.35\text{ Hz} - 440.0\text{ Hz}$)
 
-In `WaveletImageSpec()`, each semitone band $k$ stores $c_k = 2^{\lceil \log_2(\text{bw}_k \cdot T_{\text{total}}) \rceil / T_{\text{total}}}$ complex samples per 10 ms frame. For the **lowest 58 semitone bands** (MIDI 12 at $16.35\text{ Hz}$ all the way up to Concert A4, MIDI 69 at $440.0\text{ Hz}$), the sample count per 10 ms frame is:
+In `WaveletImageSpec()`, each semitone band $k$ stores $c_k = 2^{\lceil \log_2(\text{bw}_k \cdot T_{\text{total}}) \rceil} / T_{\text{total}}$ complex samples per 10 ms frame. For the **lowest 58 semitone bands** (MIDI 12 at $16.35\text{ Hz}$ all the way up to Concert A4, MIDI 69 at $440.0\text{ Hz}$), the sample count per 10 ms frame is:
 $$c_k = 1 \quad \forall k \in \{0, 1, \dots, 57\}$$
 
 In `morph.py` (`_cell_stats`), `morph_large.py` (`critic_view` and `_render`), and `keyboard_v3.py` (`cell_features`), per-cell phase coherence and amplitude modulation depth are computed by reducing exclusively along `dim=-1` (the within-cell axis of length $c_k$):
@@ -40,6 +50,10 @@ u = inc.sum(-1) / (torch.sqrt(power(inc) + TINY).sum(-1) + 1e-20)
 mod = torch.sqrt(p.var(-1, unbiased=False) + TINY) / (mean_p + 1e-20)
 ```
 
+![Experiment 1: Eliminating the c = 1 Multirate Degeneracy Across All 58 Bass Bands](figures/exp1_c1_degeneracy_fix.png)
+
+*Figure 2 — Experiment 1 visualization (`exp1_c1_degeneracy_fix.png`). **Left:** Mean response on white noise across semitone bands from $16.35\text{ Hz}$ to $3.95\text{ kHz}$. In the shaded $c = 1$ region (rows 0..57, below $440\text{ Hz}$), legacy `_cell_stats` coherence (dashed red) flatlines at `1.0000` and the legacy `MorphNet-L` harmonic gate $m$ (dotted orange) flatlines at `0.9734`, jumping discontinuously only above $440\text{ Hz}$ where $c \ge 2$. Our Semantic Bridge coherence (solid blue) and harmonic gate (solid green) accurately identify noise across every register down to $16.35\text{ Hz}$. **Right:** Direct comparison of $110\text{ Hz}$ tone vs. bass white noise in the $c = 1$ region.*
+
 **Mathematical Consequence when $c = 1$**:
 1. The sum of a single complex phase increment divided by its own magnitude is a **unit vector for any non-zero signal**:
    $$|u| = \frac{|\text{inc}_1|}{|\text{inc}_1|} \equiv 1.0000$$
@@ -49,20 +63,24 @@ mod = torch.sqrt(p.var(-1, unbiased=False) + TINY) / (mean_p + 1e-20)
    Even on **pure white noise** or sharp bass transients, modulation depth collapses to **`0.0000`** below 440 Hz!
 3. **Downstream Impact on `MorphNet-L` (`morph_large.py`, line 351)**:
    `MorphNet-L` splits each band into a coherent harmonic carrier path weighted by $m$ and a stochastic filtered-noise path weighted by $(1 - m)$:
-   $$m = \sigma(8.0 \cdot (\text{coh} - 0.55) - 3.0 \cdot \text{mod})$$
-   Because $\text{coh} \equiv 1.0$ and $\text{mod} \equiv 0.0$ for all 58 bands below 440 Hz, the gate is permanently locked at:
-   $$m = \sigma(8.0 \times 0.45 - 0) = \sigma(3.6) \approx 0.9734 \implies 1 - m \approx 0.0266$$
-   **Result**: The stochastic noise synthesis pathway in `MorphNet-L` is 97.3% disabled across the entire sub-bass, bass, and lower-midrange registers ($16.35\text{ Hz} - 440\text{ Hz}$), and `KeyboardNet v3` / `MorphCritic` cannot distinguish a pure 110 Hz sine wave from sub-bass rumble or breath noise using their coherence/modulation planes.
+   $$m = \sigma(8.0 \cdot (\text{coh} - 0.55) - 3.0 \cdot \text{mod}) = \sigma(3.6) \approx 0.9734 \implies 1 - m \approx 0.0266$$
+   **Result**: The stochastic noise synthesis pathway in `MorphNet-L` is 97.3% disabled across the entire sub-bass, bass, and lower-midrange registers ($16.35\text{ Hz} - 440\text{ Hz}$).
 
 ### Finding 2: The Low-Frequency Heisenberg Trap in Neural Planes
 
 In `wavelet_image.py`, `detail_view(mode="sharp")` implemented Auger-Flandrin time-frequency reassignment in NumPy for visual inspection only. Meanwhile, every PyTorch neural view (`judge_view` in `morph.py`, `critic_view` in `morph_large.py`, `cell_features` in `keyboard_v3.py`) fed **raw, un-reassigned 10 ms cell powers** to the convolutional backbones.
-- In the bass register ($41.2\text{ Hz} - 164.8\text{ Hz}$), a sharp impulse has an RMS temporal spread of **38.30 ms**, and only **37.74%** of its energy lands within $\pm 10\text{ ms}$ of the true onset frame.
-- Consequently, neural encoders and losses operating on raw cell power see blurry horizontal streaks in the bass rather than crisp vertical attack lines.
+
+![Experiment 2: Breaking the Low-Frequency Heisenberg Trap via Differentiable 2D Reassignment](figures/exp2_heisenberg_reassignment.png)
+
+*Figure 3 — Experiment 2 visualization (`exp2_heisenberg_reassignment.png`). **A vs. B:** Zoomed bass spectrogram ($16.35\text{ Hz} – 370\text{ Hz}$, rows 0..54) of a single impulse at $t = 0.50\text{ s}$. Raw wavelet power (A) smears the impulse across an RMS width of $38.30\text{ ms}$, whereas differentiable reassigned `sharp_mid_power` (B) concentrates it to $4.00\text{ ms}$ ($9.58\times$ sharper). **C:** Frame-by-frame bass energy profile ($41.2–164.8\text{ Hz}$) showing $99.37\%$ energy inside $\pm 1$ frame ($\pm 10\text{ ms}$) after reassignment vs. $37.74\%$ raw. **D:** Two bass impulses separated by $60\text{ ms}$ ($t = 0.47\text{ s}$ and $t = 0.53\text{ s}$), where reassignment improves peak-to-valley separation from $2.31\text{ dB}$ to $5.35\text{ dB}$.*
 
 ### Finding 3: First-Order Marginal Blindness to Spectro-Temporal Trajectories
 
 Standard pooling over time (mean/std across frames) discards joint spectro-temporal orientation. An upward pitch glide ($110\text{ Hz} \to 880\text{ Hz}$) and its time-reversed downward glide ($880\text{ Hz} \to 110\text{ Hz}$) have the **exact same 1D spectral marginal** (cosine distance $= 10^{-6}$). Separating upward vs. downward glides, formant transitions, and vibrato rates requires **Second-Order 2D Joint Time-Frequency Scattering (JTFS)** filters oriented in the `(row, frame)` plane.
+
+![Experiments 3, 4 & 5: 2D JTFS Chirp Orientation, Invariance vs. Sensitivity & Waveform Autograd](figures/exp3_4_5_jtfs_invariance_autograd.png)
+
+*Figure 4 — Experiments 3, 4 & 5 visualization (`exp3_4_5_jtfs_invariance_autograd.png`). **Left (Exp 3):** Plane 10 (`jtfs_tilt`) response on an upward chirp ($0–1.2\text{ s}$, red positive ridge, mean tilt $+0.3961$) vs. a time-reversed downward chirp ($1.2–2.4\text{ s}$, blue negative ridge, mean tilt $-0.4153$). **Center (Exp 4):** Cosine similarity under nuisance transforms ($2.7\text{ ms}$ shift, $43\text{ ms}$ shift, $90^\circ$ phase rotation) where raw complex coefficients collapse (`-0.29`, `-0.12`, `0.00`) while `semantic_wavelet_embedding` remains invariant (`1.0000`), alongside physical sensitivity to harmonic waveshape (`0.84` Sine vs. Sawtooth) and stereo phase (`-0.19` Mono vs. Anti-Stereo). **Right (Exp 5):** Direct 25-step Adam waveform optimization at 192 kHz driven by `semantic_structure_loss`.*
 
 ---
 
@@ -126,13 +144,35 @@ and splats its linear Mid power $P_{\text{mid}}(k, t)$ onto the four surrounding
 
 ---
 
-## 5. Reproducible Experimental Validation (`experiments/semantic_bridge_experiments.py`)
+## 5. Reproducible Unit Tests & Experimental Benchmarks
 
-All five experiments were executed using `experiments/semantic_bridge_experiments.py` on 192 kHz stereo signals (`WaveletImageSpec()`), with exact results saved in `experiments/semantic_bridge_results.json`.
+### 5.1 Automated Pytest Suite (`tests/test_semantic_bridge.py`)
 
-### Experiment 1: Resolution of the `c = 1` Multirate Cell Degeneracy ($16.35\text{ Hz} - 440.0\text{ Hz}$)
+All 5 unit tests in `tests/test_semantic_bridge.py` verify the mathematical guarantees on 192 kHz stereo signals:
 
-We compared legacy `_cell_stats` (`morph.py`) against `reassigned_primitives` and `harmonic_noise_gate` (`semantic_bridge.py`) across all 58 bands in the `c = 1` group on pure bass sinusoids (E1 = 41.2 Hz, A2 = 110 Hz, A3 = 220 Hz) vs. white noise:
+| Test Function | What It Verifies | Quantitative Assertion | Status |
+| :--- | :--- | :--- | :---: |
+| `test_c1_degeneracy_resolved` | Confirms legacy `_cell_stats` saturates at `1.000` coherence & `0.000` mod depth on white noise in rows 0..57 ($c=1$), and proves `semantic_bridge` separates 110 Hz tone from noise | Tone coh `> 0.95` (`1.000`), Noise coh `< 0.65` (`0.598`); Tone gate `> 0.85` (`0.973`), Noise gate `< 0.45` (`0.280`) | **PASSED** |
+| `test_low_frequency_heisenberg_reassignment` | Verifies energy conservation of `_soft_bilinear_scatter_2d` and bass impulse concentration in `sharp_mid_power` | Energy ratio `= 1.0000`; Bass $\pm 1$ frame concentration jumps from `37.7%` to `99.4%` (`2.63x`) | **PASSED** |
+| `test_jtfs_chirp_direction_asymmetry` | Verifies opposite signs of Plane 10 (`jtfs_tilt`) and JTFS spectrum separation on time-reversed exponential chirps ($110\text{ Hz} \leftrightarrow 880\text{ Hz}$) | `tilt_up = +0.3961`, `tilt_down = -0.4153` (`tilt_up * tilt_down < 0`) | **PASSED** |
+| `test_differentiability_and_silence_stability` | Verifies end-to-end autograd back to raw 192 kHz waveforms (`audio.grad`) and zero `NaN`/`Inf` on exact digital silence (`torch.zeros`) | `isfinite(audio.grad).all()` and `isfinite(silent.grad).all()` | **PASSED** |
+| `test_shift_invariance_and_timbre_discrimination` | Verifies `semantic_wavelet_embedding` invariance to a non-integer $37\text{ ms}$ ($3.7$ frame) shift while separating 220 Hz sine vs. sawtooth | Shift cosine `> 0.995` (`1.000`); Sine vs. Sawtooth `< 0.92` (`0.837`) | **PASSED** |
+
+### 5.2 Visual Summary of the 5 Benchmark Experiments (`experiments/semantic_bridge_experiments.py`)
+
+#### Experiment 1: Resolution of the `c = 1` Multirate Cell Degeneracy ($16.35\text{ Hz} - 440.0\text{ Hz}$)
+
+```
+Metric (Rows 0..57, c = 1)           Legacy (_cell_stats)       Semantic Bridge (Ours)
+────────────────────────────────────────────────────────────────────────────────────────────
+E1 (41.2 Hz) Tone Coherence          ████████████████████ 1.00  ████████████████████ 0.9932
+A2 (110 Hz)  Tone Coherence          ████████████████████ 1.00  ████████████████████ 1.0000
+White Noise  Coherence (c=1)         ████████████████████ 1.00  ████████████░░░░░░░░ 0.5975  <-- Fixed!
+A2 (110 Hz)  Modulation Depth        ░░░░░░░░░░░░░░░░░░░░ 0.00  ░░░░░░░░░░░░░░░░░░░░ 0.0006
+White Noise  Modulation Depth (c=1)  ░░░░░░░░░░░░░░░░░░░░ 0.00  █████████████████░░░ 0.8411  <-- Fixed!
+A2 (110 Hz)  Harmonic Gate m         ███████████████████░ 0.97  ███████████████████░ 0.9734
+White Noise  Harmonic Gate m (c=1)   ███████████████████░ 0.97  ██████░░░░░░░░░░░░░░ 0.2795  <-- 72% Noise Path Active!
+```
 
 | Metric (Rows 0..57, $c = 1$) | Legacy (`_cell_stats` / `morph_large`) | Semantic Bridge (`semantic_bridge.py`) | Scientific Impact |
 | :--- | :---: | :---: | :--- |
@@ -145,9 +185,16 @@ We compared legacy `_cell_stats` (`morph.py`) against `reassigned_primitives` an
 | **A2 (110 Hz) Harmonic Gate $m$** | `0.9734` | `0.9734` | Full harmonic synthesis on bass tone |
 | **White Noise Harmonic Gate $m$ ($c=1$)** | **`0.9734`** *(bug!)* | **`0.2795`** | **Re-enables 72% stochastic noise path** |
 
-### Experiment 2: Breaking the Low-Frequency Heisenberg Trap ($41.2\text{ Hz} - 164.8\text{ Hz}$)
+#### Experiment 2: Breaking the Low-Frequency Heisenberg Trap ($41.2\text{ Hz} - 164.8\text{ Hz}$)
 
-We evaluated a sharp impulse at $t = 0.50\text{ s}$ (frame 50) and a double impulse separated by $60\text{ ms}$ ($t = 0.47\text{ s}$ and $t = 0.53\text{ s}$) in the bass register:
+```
+Bass Transient Localization          Raw Wavelet Power          Reassigned Sharp Power
+────────────────────────────────────────────────────────────────────────────────────────────
+Energy in ±1 Frame (30 ms window)    ████████░░░░░░░░░░░░ 37.7% ████████████████████ 99.4%   (2.63x concentration)
+RMS Temporal Spread σ_t (ms)         ███████████████████░ 38.3  ██░░░░░░░░░░░░░░░░░░  4.0    (9.58x sharper onset)
+60 ms Double-Click Peak/Valley (dB)  ████████░░░░░░░░░░░░ 2.31  ████████████████████ 5.35    (+3.04 dB contrast)
+Total Energy Conservation Ratio      ████████████████████ 1.00  ████████████████████ 1.0000  (Exact conservation)
+```
 
 | Bass Transient Metric | Raw Wavelet Power (`mid_power`) | Reassigned Sharp Power (`sharp_mid_power`) | Improvement |
 | :--- | :---: | :---: | :---: |
@@ -156,20 +203,14 @@ We evaluated a sharp impulse at $t = 0.50\text{ s}$ (frame 50) and a double impu
 | **60 ms Double-Impulse Peak-to-Valley Contrast** | `2.31 dB` | **`5.35 dB`** | **+3.04 dB valley separation** |
 | **Global Energy Conservation Ratio** | `1.000000` | **`1.000000`** | **Exact conservation** |
 
-### Experiment 3: Second-Order 2D Joint Time-Frequency Scattering (JTFS)
+#### Experiment 3: Second-Order 2D Joint Time-Frequency Scattering (JTFS)
 
-We tested signal pairs with **identical 1D frequency marginals and identical temporal envelopes**:
-1. **Upward vs. Downward Exponential Chirp ($110\text{ Hz} \leftrightarrow 880\text{ Hz}$)**:
-   - 1D time-pooled `judge_view` cosine distance: **`0.000001`** (blind to direction).
-   - 2D `jtfs_modulation_spectrum` cosine distance: **`0.1661`** (>166,000$\times$ higher separability).
-   - Plane 10 (`jtfs_tilt`) mean on active ridge: **`+0.3961`** (upward) vs. **`-0.4153`** (downward).
-2. **Fast Vibrato ($8\text{ Hz}$) vs. Slow Pitch Drift ($1.5\text{ Hz}$) at $220\text{ Hz}$**:
-   - 1D time-pooled `judge_view` cosine distance: **`0.000906`**.
-   - 2D `jtfs_modulation_spectrum` cosine distance: **`0.0628`** (~69$\times$ higher separability).
+| Signal Pair (Identical 1D Spectral Marginals) | 1D Marginal Cosine Distance (`judge_view`) | 2D JTFS Cosine Distance (`jtfs_modulation_spectrum`) | Directional Plane 10 (`jtfs_tilt`) |
+| :--- | :---: | :---: | :---: |
+| **Upward vs. Downward Chirp ($110\text{ Hz} \leftrightarrow 880\text{ Hz}$)** | `0.000001` *(blind)* | **`0.1661`** (**166,100$\times$** higher) | **`+0.3961`** (Up) vs. **`-0.4153`** (Down) |
+| **Fast Vibrato ($8\text{ Hz}$) vs. Slow Drift ($1.5\text{ Hz}$)** | `0.000906` *(nearly blind)* | **`0.0628`** (**69$\times$** higher) | Captures modulation rate in JTFS bands |
 
-### Experiment 4: Time-Shift & Phase Invariance vs. Physical Sensitivity
-
-We compared the raw complex wavelet carrier in the $110\text{ Hz}$ band against `semantic_wavelet_embedding` (`[B, 252]`):
+#### Experiment 4: Time-Shift & Phase Invariance vs. Physical Sensitivity
 
 | Transformation / Comparison | Raw Complex Carrier Cosine | `semantic_wavelet_embedding` Cosine | Desired Property |
 | :--- | :---: | :---: | :--- |
@@ -180,19 +221,23 @@ We compared the raw complex wavelet carrier in the $110\text{ Hz}$ band against 
 | **110 Hz Sine vs. 110 Hz Square** | — | **`0.9059`** | Distinguishes odd/even harmonics |
 | **Mono vs. Anti-Phase Stereo** | — | **`-0.1854`** | Distinguishes spatial phase |
 
-### Experiment 5: Direct Autograd Waveform Optimization via `semantic_structure_loss`
+#### Experiment 5: Direct Autograd Waveform Optimization via `semantic_structure_loss`
 
 Optimizing a 192 kHz stereo waveform directly from a noisy, detuned initialization ($116\text{ Hz}$ + white noise) toward a plucked $110\text{ Hz} + 220\text{ Hz}$ bass note over 25 Adam steps using `semantic_structure_loss`:
-- `semantic_structure_loss` decreased smoothly from **`4.5363` to `3.8853` ($-14.35\%$)** with zero gradient instabilities.
+- `semantic_structure_loss` decreased from **`4.5363` to `3.8853` ($-14.35\%$)** with finite, well-conditioned gradients.
 - `semantic_wavelet_embedding` cosine similarity to the target rose from **`0.3300` to `0.4529`**.
 
 ---
 
-## 6. Recommended Next-Stage Applications & Experiments
+## 6. Reproducing All Tests, Benchmarks, and Figures
 
-1. **Upgrading `MorphNet-L` and `MorphDiffusion` with `semantic_planes` & `harmonic_noise_gate`**:
-   - Replace the 7-plane `critic_view` in `morph_large.py` with the 12-plane `semantic_planes` (or its 20 kHz slice) and replace line 351's `_cell_stats` gate with `harmonic_noise_gate(image)`. This immediately unlocks realistic sub-bass/mid-bass breath, bow noise, and percussive attack synthesis below 440 Hz.
-2. **Interactive Audio Editor Multi-Layer Inspection**:
-   - Render `semantic_planes` channels 2 (`sharp_db`), 3 (`phase_coherence`), 7 (`harmonic_agreement`), 8 (`transient_agreement`), and 10 (`jtfs_tilt`) as toggleable HSV/RGBA overlays in the audio editor, enabling users to visually select and edit **only coherent harmonics**, **only reassigned transient attacks**, or **only upward/downward pitch glides** while synthesizing back through the lossless `WaveletImage` carrier.
-3. **Contrastive / Self-Supervised Audio Foundation Embeddings**:
-   - Use `semantic_wavelet_embedding` (252-D) as a deterministic teacher target (`FixedTargetStatistics`) or input token representation for `MaskedMusicModel` and `Wavelet2Vec`, combining analytical deformation stability with learned high-level musical semantics.
+```bash
+# 1. Run the unit test suite (5/5 tests)
+pytest tests/test_semantic_bridge.py -v
+
+# 2. Run the 5-experiment quantitative benchmark (writes experiments/semantic_bridge_results.json)
+python experiments/semantic_bridge_experiments.py
+
+# 3. Regenerate all 4 multi-panel visual comparison figures in docs/figures/
+python experiments/plot_semantic_bridge_figures.py
+```

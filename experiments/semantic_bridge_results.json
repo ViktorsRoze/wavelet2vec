@@ -12,18 +12,20 @@
       "white_noise_c1_coherence": 1.0,
       "tone_A2_mod_depth": 0.0,
       "white_noise_c1_mod_depth": 0.0,
-      "tone_A2_harmonic_gate": 0.9734,
-      "white_noise_c1_harmonic_gate": 0.9734
+      "tone_A2_morphnet_l_tonal_share": 1.0,
+      "white_noise_c1_morphnet_l_tonal_share": 1.0
     },
     "semantic_bridge": {
-      "tone_E1_coherence": 0.9932,
-      "tone_A2_coherence": 1.0,
+      "tone_E1_coherence": 0.9884,
+      "tone_A2_coherence": 0.9999,
       "tone_A3_coherence": 1.0,
-      "white_noise_c1_coherence": 0.5975,
-      "tone_A2_mod_depth": 0.0006,
-      "white_noise_c1_mod_depth": 0.8411,
-      "tone_A2_harmonic_gate": 0.9734,
-      "white_noise_c1_harmonic_gate": 0.2795
+      "white_noise_c1_coherence": 0.5514,
+      "tone_A2_mod_depth": 0.0026,
+      "white_noise_c1_mod_depth": 0.896,
+      "tone_A2_harmonic_gate": 0.9732,
+      "white_noise_c1_harmonic_gate": 0.2184,
+      "tone_A2_morphnet_l_tonal_share": 1.0,
+      "white_noise_c1_morphnet_l_tonal_share": 0.5477
     }
   },
   "experiment_2_heisenberg_trap": {
@@ -50,14 +52,14 @@
     "up_vs_down_chirp": {
       "marginal_1d_cosine_distance": 1e-06,
       "jtfs_cosine_distance": 0.1661,
-      "full_embedding_cosine_distance": 0.0079,
+      "full_embedding_cosine_distance": 0.008,
       "mean_jtfs_tilt_up": 0.3961,
       "mean_jtfs_tilt_down": -0.4153
     },
     "fast_8hz_vs_slow_1p5hz_vibrato": {
       "marginal_1d_cosine_distance": 0.000906,
       "jtfs_cosine_distance": 0.0628,
-      "full_embedding_cosine_distance": 0.0081
+      "full_embedding_cosine_distance": 0.0083
     }
   },
   "experiment_4_invariance_vs_sensitivity": {
@@ -73,18 +75,107 @@
       "raw_complex_carrier_cosine": 0.0,
       "semantic_embedding_cosine": 1.0
     },
-    "timbre_and_spatial_discrimination_cosine": {
-      "sine_vs_sawtooth_110hz": 0.8365,
-      "sine_vs_square_110hz": 0.9059,
-      "mono_vs_antiphase_stereo": -0.1854
+    "sine_vs_sawtooth_110hz": {
+      "raw_complex_carrier_cosine": 1.0,
+      "semantic_embedding_cosine": 0.8365
+    },
+    "sine_vs_square_110hz": {
+      "raw_complex_carrier_cosine": 1.0,
+      "semantic_embedding_cosine": 0.9059
+    },
+    "mono_vs_antiphase_stereo": {
+      "raw_complex_carrier_cosine": 0.0,
+      "semantic_embedding_cosine": 0.9592
     }
   },
   "experiment_5_gradient_optimization": {
     "optimization_steps": 25,
-    "initial_semantic_loss": 4.5363,
-    "final_semantic_loss": 3.8853,
-    "loss_reduction_pct": 14.35,
-    "initial_embedding_cosine": 0.33,
-    "final_embedding_cosine": 0.4529
+    "initial_semantic_loss": 4.5272,
+    "final_semantic_loss": 3.9423,
+    "loss_reduction_pct": 12.92,
+    "initial_embedding_cosine": 0.3273,
+    "final_embedding_cosine": 0.44
+  },
+  "experiment_6_real_notes": {
+    "notes": {
+      "cells_notes_per_class": 48,
+      "embedding_synth_notes": 360,
+      "embedding_synth_families": 60,
+      "embedding_vox_notes": 120
+    },
+    "a_harmonic_vs_noise_cells_below_440hz": {
+      "existing per-cell coherence": {
+        "auc_vox": 0.537,
+        "auc_synth": 0.543,
+        "mean_harmonic_vox": 1.0,
+        "mean_harmonic_synth": 1.0,
+        "mean_noise": 0.969
+      },
+      "semantic-bridge coherence": {
+        "auc_vox": 0.841,
+        "auc_synth": 0.846,
+        "mean_harmonic_vox": 0.835,
+        "mean_harmonic_synth": 0.845,
+        "mean_noise": 0.505
+      },
+      "semantic-bridge harmonic gate": {
+        "auc_vox": 0.867,
+        "auc_synth": 0.877,
+        "mean_harmonic_vox": 0.747,
+        "mean_harmonic_synth": 0.736,
+        "mean_noise": 0.175
+      }
+    },
+    "b_morphnet_l_noise_path_below_440hz": {
+      "cell (as trained)": {
+        "harmonic_cells_to_noise_vox": 0.0,
+        "harmonic_cells_to_noise_synth": 0.0,
+        "noise_cells_to_noise": 0.033
+      },
+      "scale": {
+        "harmonic_cells_to_noise_vox": 0.161,
+        "harmonic_cells_to_noise_synth": 0.146,
+        "noise_cells_to_noise": 0.523
+      },
+      "scale + pitch protection": {
+        "harmonic_cells_to_noise_vox": 0.0,
+        "harmonic_cells_to_noise_synth": 0.0,
+        "noise_cells_to_noise": 0.494
+      }
+    },
+    "c_embeddings": {
+      "semantic embedding": {
+        "dims": 252,
+        "family_1nn": 0.489,
+        "vox_vs_synth": 0.975
+      },
+      "semantic embedding, standardized": {
+        "dims": 252,
+        "family_1nn": 0.7,
+        "vox_vs_synth": 0.981
+      },
+      "Wavelet2Vec": {
+        "dims": 570,
+        "family_1nn": 0.117,
+        "vox_vs_synth": 0.975
+      },
+      "Wavelet2Vec, standardized": {
+        "dims": 570,
+        "family_1nn": 0.219,
+        "vox_vs_synth": 0.975
+      },
+      "mean spectrum": {
+        "dims": 120,
+        "family_1nn": 0.111,
+        "vox_vs_synth": 0.883
+      },
+      "mean spectrum, standardized": {
+        "dims": 120,
+        "family_1nn": 0.139,
+        "vox_vs_synth": 0.883
+      },
+      "chance_family_1nn": 0.017
+    },
+    "seconds": 131.9
   }
 }

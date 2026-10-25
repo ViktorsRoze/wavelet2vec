@@ -342,6 +342,33 @@ logits, embedding = JudgeCNN()(view)                           # (vox present, s
 the plain mix, and a carrier shaped per cell by another note's level.
 Training and design: [MORPH_MODEL.md](MORPH_MODEL.md).
 
+**Opt-in tonality below 440 Hz.**
+- `judge_view(image, stats="scale")` and `critic_view(image, stats="scale")` take the coherence length and
+  modulation depth of the 58 one-sample rows from the semantic bridge. In those rows the default `"cell"`
+  statistics are constant. Feed a judge the statistics it was trained on.
+- `MorphNetL(..., noise_gate="scale")` with `decode(..., midis=keys)` does the same for MorphNet-L's
+  tonal/noise split and keeps the notes' harmonic rows tonal.
+- Training: `train_morph_large.py --noise-gate scale`.
+
+## Semantic bridge
+
+```python
+from wavelet2vec.semantic_bridge import (semantic_planes, semantic_wavelet_embedding, fit_embedding_standardizer,
+                                         harmonic_noise_gate, reassigned_primitives, semantic_structure_loss)
+
+planes = semantic_planes(image)              # [B, 12, 149, 120]: level, side, reassigned level, tonality, ...
+gate = harmonic_noise_gate(image)            # [B, 149, 136]: 1 tonal, 0 noise (active cells)
+prim = reassigned_primitives(image)          # per cell: instantaneous frequency, group delay, AM rate, ...
+reference = semantic_wavelet_embedding(reference_audio)            # [N, 252], unit length
+stats = fit_embedding_standardizer(reference)                      # save with its reference set
+emb = semantic_wavelet_embedding(audio, standardizer=stats)        # [B, 252], standardized, unit length
+loss = semantic_structure_loss(pred_image, target_image)           # differentiable
+```
+
+Levels are relative to the clip's loudest cell, but never to a peak below −40 dB re full scale. Silence sits
+at the floor. Planes, measurements on real notes and limits:
+[BRIDGING_SIGNAL_AND_SEMANTICS.md](BRIDGING_SIGNAL_AND_SEMANTICS.md).
+
 ## Tools: vocal detector
 
 `wavelet2vec.tools` holds analysis tools. `detect_vocal_parts` labels a

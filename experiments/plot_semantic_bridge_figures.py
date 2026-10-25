@@ -1,593 +1,312 @@
-"""Generate publication-grade visual comparison figures for the Semantic Bridge.
+"""Figures for docs/BRIDGING_SIGNAL_AND_SEMANTICS.md.
 
-Saves 4 high-resolution multi-panel PNG figures to `docs/figures/`:
-  1. `semantic_bridge_overview.png` — 4-panel hero comparison (Raw vs. Reassigned Sharp Level,
-     Legacy c=1 Degenerate Coherence vs. Scale-Consistent Semantic Bridge Coherence).
-  2. `exp1_c1_degeneracy_fix.png` — Experiment 1: Per-band profiles across the 440 Hz (c=1 -> c=2)
-     boundary and bar chart of Tone vs. Noise separation in the 58 bands below 440 Hz.
-  3. `exp2_heisenberg_reassignment.png` — Experiment 2: Single-impulse & 60 ms double-impulse
-     bass localization (38.3 ms -> 4.0 ms RMS spread, 37.7% -> 99.4% energy concentration).
-  4. `exp3_4_5_jtfs_invariance_autograd.png` — Experiments 3, 4 & 5: 2D JTFS upward vs. downward
-     chirp tilt maps, shift/phase invariance vs. timbre sensitivity, and autograd convergence.
+Every number shown comes from experiments/semantic_bridge_results.json (run
+semantic_bridge_experiments.py first) or is computed here from the plotted data.
+
+  1. semantic_bridge_overview.png   - a composite scene: raw vs reassigned level, existing vs bridge coherence
+  2. semantic_bridge_bass_coherence.png - white-noise response per band; harmonic vs noise cells on real notes
+  3. semantic_bridge_reassignment.png  - bass click localization and a 60 ms double click
+  4. semantic_bridge_embedding.png     - glide direction, invariance checks, family identification on real notes
 """
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
-import torch.nn.functional as F
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
-from wavelet2vec.morph import _cell_stats
-from wavelet2vec.semantic_bridge import (
-    SPEC,
-    harmonic_noise_gate,
-    reassigned_primitives,
-    semantic_planes,
-    semantic_structure_loss,
-    semantic_wavelet_embedding,
-)
-from wavelet2vec.wavelet_image import band_layout, encode
+from wavelet2vec.morph import _cell_stats  # noqa: E402
+from wavelet2vec.semantic_bridge import SPEC, harmonic_noise_gate, reassigned_primitives, semantic_planes  # noqa: E402
+from wavelet2vec.wavelet_image import band_layout, encode  # noqa: E402
 
+ROOT = Path(__file__).resolve().parent
+RESULTS = ROOT / "semantic_bridge_results.json"
+OUT = ROOT.parent / "docs" / "figures"
+CORE = slice(SPEC.pad_frames, SPEC.pad_frames + SPEC.n_frames)
+C1 = sum(1 for b in band_layout(SPEC) if b.per_frame == 1)          # 58 one-sample rows, below 440 Hz
 
+# light theme; categorical slots in fixed order (validated reference palette)
+INK, INK_2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
+BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
 plt.rcParams.update({
-    "figure.facecolor": "#0d1117",
-    "axes.facecolor": "#161b22",
-    "axes.edgecolor": "#30363d",
-    "axes.labelcolor": "#e6edf3",
-    "text.color": "#e6edf3",
-    "xtick.color": "#8b949e",
-    "ytick.color": "#8b949e",
-    "grid.color": "#21262d",
-    "font.size": 10,
-    "axes.titlesize": 11,
-    "axes.titleweight": "bold",
+    "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
+    "axes.edgecolor": GRID, "axes.labelcolor": INK_2, "text.color": INK, "xtick.color": INK_2,
+    "ytick.color": INK_2, "grid.color": GRID, "font.size": 9.5, "axes.titlesize": 10.5,
+    "axes.titleweight": "bold", "axes.spines.top": False, "axes.spines.right": False, "legend.frameon": False,
 })
 
 
 def _stereo(mono: torch.Tensor) -> torch.Tensor:
-    return torch.stack([mono, mono], dim=0)[None, :, :]
+    return torch.stack([mono, mono], dim=0)[None]
 
 
-def _freq_ticks(max_row: int = 100):
-    bands = band_layout(SPEC)
-    tick_hz = [20, 40, 80, 160, 440, 1000, 2500, 5000]
-    rows = []
-    labels = []
-    for hz in tick_hz:
-        midi = 69.0 + 12.0 * math.log2(hz / 440.0)
-        r = int(round(midi - SPEC.first_midi))
+def _freq_ticks(max_row: int):
+    rows, labels = [], []
+    for hz in (20, 40, 80, 160, 440, 1000, 2500, 5000):
+        r = int(round(69.0 + 12.0 * math.log2(hz / 440.0) - SPEC.first_midi))
         if 0 <= r < max_row:
             rows.append(r)
-            labels.append(f"{hz} Hz" if hz < 1000 else f"{hz/1000:.1f}k" if hz % 1000 else f"{hz//1000}k Hz")
+            labels.append(f"{hz} Hz" if hz < 1000 else f"{hz / 1000:g} kHz")
     return rows, labels
 
 
-def make_figure_1_overview(out_dir: Path) -> Path:
-    """Hero 4-panel comparison on a composite scene: bass click + sub-bass 55 Hz + saw glide + noise burst."""
-    sr = SPEC.sample_rate
-    n = SPEC.audio_length
+def _boundary(ax, horizontal=True):
+    (ax.axhline if horizontal else ax.axvline)(C1 - 0.5, color=INK_2, linestyle="--", linewidth=0.9)
+
+
+def _bar_labels(ax, bars, fmt="{:.2f}"):
+    for bar in bars:
+        h = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width() / 2, h + (0.015 if h >= 0 else -0.06), fmt.format(h),
+                ha="center", va="bottom", fontsize=8, color=INK_2)
+
+
+def _save(fig, name):
+    path = OUT / name
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
+def figure_overview():
+    """Composite scene: bass click (0.18 s), 55 Hz saw note (0.28-0.78 s), noise burst (0.84-1.12 s)."""
+    n, sr = SPEC.audio_length, SPEC.sample_rate
     t = torch.arange(n, dtype=torch.float32) / sr
     torch.manual_seed(42)
-
-    # 1. Sharp broadband + bass click at t = 0.18 s
-    sig = torch.zeros(n, dtype=torch.float32)
-    c_idx = int(0.18 * sr)
-    win = torch.hann_window(64)
-    sig[c_idx - 32 : c_idx + 32] += 0.95 * win
-
-    # 2. Sub-bass 55 Hz (A1) + 110 Hz (A2) + harmonic sawtooth glide from t = 0.28 s to 0.78 s
-    mask_tone = ((t >= 0.28) & (t <= 0.78)).float()
-    env_tone = mask_tone * torch.clamp(torch.sin(math.pi * torch.clamp((t - 0.28) / 0.50, 0.0, 1.0)), min=0.0) ** 0.5
-    f0 = 55.0
+    sig = torch.zeros(n)
+    c = int(0.18 * sr)
+    sig[c - 32:c + 32] += 0.95 * torch.hann_window(64)
+    env = ((t >= 0.28) & (t <= 0.78)).float() * torch.clamp(
+        torch.sin(math.pi * torch.clamp((t - 0.28) / 0.5, 0, 1)), min=0) ** 0.5
     for h in range(1, 14):
-        # Slight upward pitch bend on upper harmonics
-        bend = 1.0 + 0.08 * torch.clamp((t - 0.28) / 0.50, 0.0, 1.0)
-        phase = 2.0 * math.pi * (f0 * h) * (t + 0.04 * torch.clamp(t - 0.28, min=0.0) ** 2)
-        sig += env_tone * (0.38 / (h ** 0.85)) * torch.sin(phase)
-
-    # 3. Broadband noise burst from t = 0.84 s to 1.12 s
-    mask_noise = ((t >= 0.84) & (t <= 1.12)).float()
-    sig += mask_noise * 0.22 * torch.randn(n)
-
+        sig += env * (0.38 / h ** 0.85) * torch.sin(2 * math.pi * 55.0 * h * (t + 0.04 * torch.clamp(t - 0.28, min=0) ** 2))
+    sig += ((t >= 0.84) & (t <= 1.12)).float() * 0.22 * torch.randn(n)
     img = encode(_stereo(sig), SPEC)
-    planes = semantic_planes(img, core_only=True)[0].numpy()  # [12, 149, 120]
-
-    # Legacy coherence across all 149 rows
-    leg_coh = np.zeros((SPEC.n_bands, SPEC.total_frames), dtype=np.float32)
-    for c, values in img.groups.items():
-        _, _, u_re, u_im, _ = _cell_stats(values)
-        c_val = torch.sqrt(u_re ** 2 + u_im ** 2)[0].numpy()
-        for idx_in_g, r in enumerate(img.rows[c]):
-            leg_coh[r] = c_val[idx_in_g]
-    leg_coh_core = leg_coh[:, SPEC.pad_frames : SPEC.pad_frames + SPEC.n_frames]
-    # Gate legacy coherence by raw mid_db activity so silent background is dark
-    gate = np.clip((planes[0] + 1.0) * 2.5, 0.0, 1.0)
-    leg_coh_gated = leg_coh_core * gate
-
-    max_r = 102  # up to ~6 kHz for clear visual inspection
-    rows_ticks, labels_ticks = _freq_ticks(max_r)
-    extent = [0.0, 1.2, 0, max_r]
-
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8.8), dpi=160)
-    fig.suptitle(
-        "Wavelet2Vec Semantic Bridge: Resolving the Heisenberg Trap & c = 1 Bass Degeneracy (192 kHz)",
-        fontsize=14,
-        fontweight="bold",
-        y=0.98,
-    )
-
-    # Panel A: Raw mid_db
-    ax = axes[0, 0]
-    im0 = ax.imshow(
-        (planes[0, :max_r] - 1.0) * 30.0,
-        origin="lower",
-        aspect="auto",
-        extent=extent,
-        cmap="magma",
-        vmin=-60,
-        vmax=0,
-    )
-    ax.axhline(57.5, color="#58a6ff", linestyle="--", linewidth=1.2, alpha=0.85)
-    ax.text(0.03, 59.5, "c = 1 / c = 2 boundary (440 Hz)", color="#58a6ff", fontsize=8.5)
-    ax.annotate(
-        "Heisenberg Blur\n(38.3 ms RMS spread)",
-        xy=(0.18, 22),
-        xytext=(0.30, 10),
-        arrowprops=dict(arrowstyle="->", color="#ff7b72", lw=1.5),
-        color="#ff7b72",
-        fontsize=9,
-        fontweight="bold",
-    )
-    ax.set_title("A. Legacy Raw Wavelet Cell Level (mid_db)")
-    ax.set_yticks(rows_ticks, labels_ticks)
-    ax.set_ylabel("Frequency (Semitone Rows)")
-    plt.colorbar(im0, ax=ax, label="dB re peak")
-
-    # Panel B: Differentiable Reassigned sharp_db
-    ax = axes[0, 1]
-    im1 = ax.imshow(
-        (planes[2, :max_r] - 1.0) * 30.0,
-        origin="lower",
-        aspect="auto",
-        extent=extent,
-        cmap="magma",
-        vmin=-60,
-        vmax=0,
-    )
-    ax.axhline(57.5, color="#58a6ff", linestyle="--", linewidth=1.2, alpha=0.85)
-    ax.annotate(
-        "Reassigned Attack\n(4.0 ms RMS, 99.4% in ±1 frame)",
-        xy=(0.18, 22),
-        xytext=(0.30, 10),
-        arrowprops=dict(arrowstyle="->", color="#3fb950", lw=1.5),
-        color="#3fb950",
-        fontsize=9,
-        fontweight="bold",
-    )
-    ax.set_title("B. Differentiable Synchrosqueezed Level (sharp_db, Plane 2)")
-    ax.set_yticks(rows_ticks, labels_ticks)
-    plt.colorbar(im1, ax=ax, label="dB re peak")
-
-    # Panel C: Legacy Phase Coherence
-    ax = axes[1, 0]
-    im2 = ax.imshow(
-        leg_coh_gated[:max_r],
-        origin="lower",
-        aspect="auto",
-        extent=extent,
-        cmap="viridis",
-        vmin=0.0,
-        vmax=1.0,
-    )
-    ax.axhline(57.5, color="#ff7b72", linestyle="--", linewidth=1.5)
-    ax.annotate(
-        "c = 1 Degeneracy Bug!\nNoise saturates at Coh = 1.000\nin all 58 bands below 440 Hz",
-        xy=(0.96, 30),
-        xytext=(0.42, 14),
-        arrowprops=dict(arrowstyle="->", color="#ff7b72", lw=1.8),
-        color="#ff7b72",
-        fontsize=9,
-        fontweight="bold",
-        bbox=dict(boxstyle="round,pad=0.3", fc="#0d1117", ec="#ff7b72", alpha=0.9),
-    )
-    ax.set_title("C. Legacy Within-Cell Coherence (_cell_stats / critic_view)")
-    ax.set_yticks(rows_ticks, labels_ticks)
-    ax.set_xlabel("Time (seconds)")
-    ax.set_ylabel("Frequency (Semitone Rows)")
-    plt.colorbar(im2, ax=ax, label="Coherence [0, 1]")
-
-    # Panel D: Semantic Bridge Scale-Consistent Coherence
-    ax = axes[1, 1]
-    im3 = ax.imshow(
-        planes[3, :max_r],
-        origin="lower",
-        aspect="auto",
-        extent=extent,
-        cmap="viridis",
-        vmin=0.0,
-        vmax=1.0,
-    )
-    ax.axhline(57.5, color="#3fb950", linestyle="--", linewidth=1.2, alpha=0.85)
-    ax.annotate(
-        "Noise Properly Suppressed\nDown to 16.35 Hz (Coh ~ 0.59)",
-        xy=(0.96, 30),
-        xytext=(0.45, 14),
-        arrowprops=dict(arrowstyle="->", color="#3fb950", lw=1.8),
-        color="#3fb950",
-        fontsize=9,
-        fontweight="bold",
-        bbox=dict(boxstyle="round,pad=0.3", fc="#0d1117", ec="#3fb950", alpha=0.9),
-    )
-    ax.set_title("D. Semantic Bridge Scale-Consistent Coherence (Plane 3)")
-    ax.set_yticks(rows_ticks, labels_ticks)
-    ax.set_xlabel("Time (seconds)")
-    plt.colorbar(im3, ax=ax, label="Coherence [0, 1]")
-
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    out_path = out_dir / "semantic_bridge_overview.png"
-    fig.savefig(out_path, dpi=160)
-    plt.close(fig)
-    return out_path
+    planes = semantic_planes(img)[0].numpy()
+    existing = np.zeros((SPEC.n_bands, SPEC.total_frames), dtype=np.float32)
+    for cnt, values in img.groups.items():
+        _, _, re, im, _ = _cell_stats(values)
+        existing[list(img.rows[cnt])] = torch.sqrt(re ** 2 + im ** 2)[0].numpy()
+    active = np.clip((planes[0] + 1.0) * 2.5, 0.0, 1.0)                 # fade silent cells out, as the views do
+    existing = existing[:, CORE] * active
+    bridge = planes[3]
+    burst = slice(86, 110)                                              # frames inside the noise burst
+    loud = active[:C1, burst] > 0.5
+    rows_ticks, labels = _freq_ticks(102)
+    extent = [0.0, 1.2, 0, 102]
+    fig, axes = plt.subplots(2, 2, figsize=(12.5, 7.6))
+    panels = [(planes[0], "A. Cell level (mid), dB re peak", "magma", (-1, 1)),
+              (planes[2], "B. Reassigned level (sharp_db)", "magma", (-1, 1)),
+              (existing, "C. Existing per-cell coherence (judge/critic views)", "Blues", (0, 1)),
+              (bridge, "D. Semantic-bridge coherence (plane 3)", "Blues", (0, 1))]
+    for ax, (data, title, cmap, (lo, hi)) in zip(axes.flat, panels):
+        shown = (data[:102] - 1.0) * 30.0 if cmap == "magma" else data[:102]
+        im = ax.imshow(shown, origin="lower", aspect="auto", extent=extent, cmap=cmap,
+                       vmin=-60 if cmap == "magma" else lo, vmax=0 if cmap == "magma" else hi)
+        _boundary(ax)
+        ax.set_title(title, loc="left")
+        ax.set_yticks(rows_ticks, labels)
+        fig.colorbar(im, ax=ax, label="dB re peak" if cmap == "magma" else "coherence")
+    for ax, data in ((axes[1, 0], existing), (axes[1, 1], bridge)):
+        value = float(data[:C1, burst][loud].mean())
+        ax.text(0.98, 0.04, f"noise burst below 440 Hz: mean {value:.2f}", transform=ax.transAxes, ha="right",
+                fontsize=8.5, color=INK, bbox=dict(boxstyle="round,pad=0.25", fc=SURFACE, ec=GRID))
+        ax.set_xlabel("time (s)")
+    axes[0, 0].text(0.01, (C1 + 1) / 102, "440 Hz: one sample per cell below", transform=axes[0, 0].transAxes,
+                    fontsize=8, color="white")
+    fig.suptitle("Click, 55 Hz saw note and noise burst at 192 kHz", x=0.01, ha="left", fontweight="bold")
+    fig.tight_layout()
+    return _save(fig, "semantic_bridge_overview.png")
 
 
-def make_figure_2_c1_degeneracy(out_dir: Path) -> Path:
-    """Experiment 1 Figure: Per-row coherence/modulation/gate profile across c=1..c=8 and bar metrics."""
-    sr = SPEC.sample_rate
-    n = SPEC.audio_length
-    t = torch.arange(n, dtype=torch.float32) / sr
-    bands = band_layout(SPEC)
-
+def figure_bass_coherence(results):
+    """Left: per-band mean on white noise. Right: harmonic vs noise cells on real notes (AUC)."""
+    n, sr = SPEC.audio_length, SPEC.sample_rate
     torch.manual_seed(101)
-    noise = 0.25 * torch.randn(n, dtype=torch.float32)
-    tone_a2 = 0.5 * torch.sin(2.0 * math.pi * bands[33].center_hz * t)
-
-    img = encode(torch.cat([_stereo(noise), _stereo(tone_a2)], dim=0), SPEC)
+    img = encode(_stereo(0.25 * torch.randn(n)), SPEC)
     prim = reassigned_primitives(img)
-    gate = harmonic_noise_gate(img, core_only=False)
+    gate = harmonic_noise_gate(img)
     sl = slice(SPEC.pad_frames + 12, SPEC.pad_frames + SPEC.n_frames - 12)
-
-    # Extract legacy per-row stats on white noise
-    leg_noise_coh = np.zeros(SPEC.n_bands)
-    leg_noise_mod = np.zeros(SPEC.n_bands)
-    leg_noise_gate = np.zeros(SPEC.n_bands)
-    for c, values in img.groups.items():
-        _, _, u_re, u_im, l_mod = _cell_stats(values)
-        l_coh = torch.sqrt(u_re ** 2 + u_im ** 2)
-        l_gate = torch.sigmoid(8.0 * (l_coh - 0.55) - 3.0 * l_mod)
-        for idx_g, r in enumerate(img.rows[c]):
-            leg_noise_coh[r] = l_coh[0, idx_g, sl].mean().item()
-            leg_noise_mod[r] = l_mod[0, idx_g, sl].mean().item()
-            leg_noise_gate[r] = l_gate[0, idx_g, sl].mean().item()
-
-    new_noise_coh = prim.phase_coherence[0, :, sl].mean(dim=-1).numpy()
-    new_noise_mod = prim.mod_depth[0, :, sl].mean(dim=-1).numpy()
-    new_noise_gate = gate[0, :, sl].mean(dim=-1).numpy()
-
-    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.2), dpi=160)
-    fig.suptitle(
-        "Experiment 1: Eliminating the c = 1 Multirate Degeneracy Across All 58 Bass Bands (16.35 Hz – 440 Hz)",
-        fontsize=13,
-        fontweight="bold",
-        y=0.98,
-    )
-
-    # Left panel: Per-row curves across rows 0..95 (16.35 Hz to 3951 Hz)
-    ax = axes[0]
+    existing = np.zeros(SPEC.n_bands)
+    for cnt, values in img.groups.items():
+        _, _, re, im, _ = _cell_stats(values)
+        existing[list(img.rows[cnt])] = torch.sqrt(re ** 2 + im ** 2)[0, :, sl].mean(-1).numpy()
     r_max = 95
-    r_axis = np.arange(r_max)
-    ax.axvspan(0, 57.5, color="#ff7b72", alpha=0.10, label="c = 1 region (58 bands, 16.35–440 Hz)")
-    ax.axvline(57.5, color="#ff7b72", linestyle="--", lw=1.3)
-
-    ax.plot(r_axis, leg_noise_coh[:r_max], "--", color="#ff7b72", lw=2.2, label="Legacy Noise Coherence (_cell_stats)")
-    ax.plot(r_axis, leg_noise_gate[:r_max], ":", color="#ffa657", lw=2.0, label="Legacy Noise Harmonic Gate m")
-    ax.plot(r_axis, new_noise_coh[:r_max], "-", color="#58a6ff", lw=2.2, label="Semantic Bridge Noise Coherence")
-    ax.plot(r_axis, new_noise_gate[:r_max], "-", color="#3fb950", lw=2.2, label="Semantic Bridge Noise Harmonic Gate m")
-
-    rows_ticks, labels_ticks = _freq_ticks(r_max)
-    ax.set_xticks(rows_ticks, labels_ticks, rotation=20)
-    ax.set_ylim(-0.05, 1.08)
-    ax.set_xlabel("Semitone Band Center Frequency")
-    ax.set_ylabel("Mean Value on White Noise")
-    ax.set_title("Per-Band Response on White Noise Across Sample-Rate Groups")
-    ax.grid(True, alpha=0.4)
-    ax.legend(loc="lower left", fontsize=8.5, framealpha=0.9)
-
-    # Right panel: Grouped bar chart comparing Tone vs White Noise in c=1 region
-    ax = axes[1]
-    categories = [
-        "110 Hz Tone\nCoherence",
-        "Bass Noise\nCoherence",
-        "110 Hz Tone\nMod Depth",
-        "Bass Noise\nMod Depth",
-        "110 Hz Tone\nHarmonic Gate",
-        "Bass Noise\nHarmonic Gate",
-    ]
-    legacy_vals = [1.0000, 1.0000, 0.0000, 0.0000, 0.9734, 0.9734]
-    bridge_vals = [1.0000, 0.5975, 0.0006, 0.8411, 0.9734, 0.2795]
-
-    x = np.arange(len(categories))
-    w = 0.36
-    b1 = ax.bar(x - w / 2, legacy_vals, w, label="Legacy (_cell_stats / morph_large)", color="#ff7b72", alpha=0.88)
-    b2 = ax.bar(x + w / 2, bridge_vals, w, label="Semantic Bridge (Ours)", color="#3fb950", alpha=0.92)
-
-    for bar in b1:
-        h = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, h + 0.02, f"{h:.2f}", ha="center", va="bottom", fontsize=8, color="#ff7b72")
-    for bar in b2:
-        h = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, h + 0.02, f"{h:.2f}", ha="center", va="bottom", fontsize=8, color="#3fb950", fontweight="bold")
-
-    ax.set_xticks(x, categories, fontsize=8.5)
-    ax.set_ylim(0, 1.15)
-    ax.set_ylabel("Measured Value (Rows 0..57, c = 1)")
-    ax.set_title("Sub-Bass / Bass (c = 1) Tone vs. White Noise Separation")
-    ax.grid(True, axis="y", alpha=0.4)
-    ax.legend(loc="upper right", fontsize=9)
-
-    plt.tight_layout(rect=[0, 0, 1, 0.94])
-    out_path = out_dir / "exp1_c1_degeneracy_fix.png"
-    fig.savefig(out_path, dpi=160)
-    plt.close(fig)
-    return out_path
-
-
-def make_figure_3_heisenberg_trap(out_dir: Path) -> Path:
-    """Experiment 2 Figure: Single impulse & 60 ms double-impulse bass reassignment."""
-    sr = SPEC.sample_rate
-    n = SPEC.audio_length
-    win = torch.hann_window(64)
-
-    click1 = torch.zeros(n, dtype=torch.float32)
-    c0 = int(0.50 * sr)
-    click1[c0 - 32 : c0 + 32] = 0.95 * win
-
-    click2 = torch.zeros(n, dtype=torch.float32)
-    c_l, c_r = int(0.47 * sr), int(0.53 * sr)
-    click2[c_l - 32 : c_l + 32] = 0.95 * win
-    click2[c_r - 32 : c_r + 32] = 0.95 * win
-
-    img = encode(torch.cat([_stereo(click1), _stereo(click2)], dim=0), SPEC)
-    prim = reassigned_primitives(img)
-
-    sl_core = slice(SPEC.pad_frames, SPEC.pad_frames + SPEC.n_frames)
-    raw_1 = prim.mid_power[0, :55, sl_core].numpy()
-    sharp_1 = prim.sharp_mid_power[0, :55, sl_core].numpy()
-
-    raw_1_db = 10.0 * np.log10(raw_1 / (raw_1.max() + 1e-30) + 1e-6)
-    sharp_1_db = 10.0 * np.log10(sharp_1 / (sharp_1.max() + 1e-30) + 1e-6)
-
-    fig, axes = plt.subplots(2, 2, figsize=(13.5, 8.2), dpi=160)
-    fig.suptitle(
-        "Experiment 2: Breaking the Low-Frequency Heisenberg Trap via Differentiable 2D Reassignment",
-        fontsize=13,
-        fontweight="bold",
-        y=0.98,
-    )
-
-    t_zoom = (0.30, 0.70)
-    f_lo, f_hi = 30, 70
-    rows_ticks, labels_ticks = _freq_ticks(55)
-    extent_zoom = [0.30, 0.70, 0, 55]
-
-    # Top-Left: Raw bass spectrogram around t = 0.50 s
-    ax = axes[0, 0]
-    im0 = ax.imshow(
-        raw_1_db[:, f_lo:f_hi],
-        origin="lower",
-        aspect="auto",
-        extent=extent_zoom,
-        cmap="inferno",
-        vmin=-45,
-        vmax=0,
-    )
-    ax.axvline(0.50, color="#58a6ff", linestyle="--", lw=1.1, alpha=0.8)
-    ax.set_title("A. Raw Bass Wavelet Power (RMS Spread = 38.30 ms)")
-    ax.set_yticks(rows_ticks, labels_ticks)
-    ax.set_ylabel("Bass Frequency (Rows 0..54)")
-    plt.colorbar(im0, ax=ax, label="dB re peak")
-
-    # Top-Right: Reassigned sharp bass spectrogram around t = 0.50 s
-    ax = axes[0, 1]
-    im1 = ax.imshow(
-        sharp_1_db[:, f_lo:f_hi],
-        origin="lower",
-        aspect="auto",
-        extent=extent_zoom,
-        cmap="inferno",
-        vmin=-45,
-        vmax=0,
-    )
-    ax.axvline(0.50, color="#3fb950", linestyle="--", lw=1.1, alpha=0.8)
-    ax.set_title("B. Differentiable Reassigned Sharp Power (RMS Spread = 4.00 ms)")
-    ax.set_yticks(rows_ticks, labels_ticks)
-    plt.colorbar(im1, ax=ax, label="dB re peak")
-
-    # Bottom-Left: Single-impulse temporal profile in bass register (41.2..164.8 Hz, rows 16..40)
-    ax = axes[1, 0]
-    t_frames = np.arange(f_lo, f_hi) * 0.01
-    raw_env = raw_1[16:41, f_lo:f_hi].sum(axis=0)
-    sharp_env = sharp_1[16:41, f_lo:f_hi].sum(axis=0)
-    raw_env = raw_env / (raw_env.sum() + 1e-30)
-    sharp_env = sharp_env / (sharp_env.sum() + 1e-30)
-
-    ax.plot(t_frames, raw_env, "--o", color="#ff7b72", lw=2.0, markersize=4, label="Raw Bass Power (37.7% in ±10 ms)")
-    ax.plot(t_frames, sharp_env, "-o", color="#3fb950", lw=2.2, markersize=4, label="Reassigned Sharp Power (99.4% in ±10 ms)")
-    ax.axvspan(0.49, 0.51, color="#3fb950", alpha=0.15, label="±1 Frame (±10 ms) Target Window")
-    ax.set_title("C. Single Impulse Bass Energy Concentration (41.2–164.8 Hz)")
-    ax.set_xlabel("Time (seconds)")
-    ax.set_ylabel("Normalized Energy Fraction per Frame")
-    ax.grid(True, alpha=0.4)
-    ax.legend(loc="upper right", fontsize=8.5)
-
-    # Bottom-Right: Double impulse separated by 60 ms (t = 0.47 s and t = 0.53 s)
-    ax = axes[1, 1]
-    raw_2 = prim.mid_power[1, 28:47, sl_core].mean(dim=0).numpy()[f_lo:f_hi]
-    sharp_2 = prim.sharp_mid_power[1, 28:47, sl_core].mean(dim=0).numpy()[f_lo:f_hi]
-    raw_2_db = 10.0 * np.log10(raw_2 / (raw_2.max() + 1e-30) + 1e-6)
-    sharp_2_db = 10.0 * np.log10(sharp_2 / (sharp_2.max() + 1e-30) + 1e-6)
-
-    ax.plot(t_frames, raw_2_db, "--o", color="#ff7b72", lw=2.0, markersize=4, label="Raw Bass Power (Peak-to-Valley = 2.31 dB)")
-    ax.plot(t_frames, sharp_2_db, "-o", color="#58a6ff", lw=2.2, markersize=4, label="Reassigned Sharp Power (Peak-to-Valley = 5.35 dB)")
-    ax.axvline(0.47, color="#8b949e", linestyle=":", lw=1.2)
-    ax.axvline(0.53, color="#8b949e", linestyle=":", lw=1.2)
-    ax.set_ylim(-25, 2)
-    ax.set_title("D. 60 ms Double-Impulse Resolution in Bass (82–233 Hz)")
-    ax.set_xlabel("Time (seconds)")
-    ax.set_ylabel("Normalized Level (dB)")
-    ax.grid(True, alpha=0.4)
-    ax.legend(loc="lower center", fontsize=8.5)
-
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    out_path = out_dir / "exp2_heisenberg_reassignment.png"
-    fig.savefig(out_path, dpi=160)
-    plt.close(fig)
-    return out_path
-
-
-def make_figure_4_jtfs_invariance_autograd(out_dir: Path) -> Path:
-    """Experiments 3, 4 & 5 Figure: JTFS chirp tilt, invariance vs sensitivity, and autograd curve."""
-    sr = SPEC.sample_rate
-    n = SPEC.audio_length
-    t = torch.arange(n, dtype=torch.float32) / sr
-    env = torch.sin(math.pi * t) ** 2
-
-    # Upward vs downward chirp for Panel A
-    f0, f1 = 110.0, 880.0
-    k = math.log(f1 / f0)
-    phase = 2.0 * math.pi * f0 * (torch.exp(k * t) - 1.0) / k
-    chirp_up = 0.5 * env * torch.sin(phase)
-    chirp_down = torch.flip(chirp_up, dims=[0])
-    img_chirp = encode(torch.cat([_stereo(chirp_up), _stereo(chirp_down)], dim=0), SPEC)
-    planes_chirp = semantic_planes(img_chirp, core_only=True).numpy()
-
-    # Autograd curve for Panel C
-    onset = (t >= 0.30).float()
-    decay = torch.exp(-6.0 * torch.clamp(t - 0.30, min=0.0)) * onset
-    target_mono = decay * (
-        0.55 * torch.sin(2.0 * math.pi * 110.0 * (t - 0.30))
-        + 0.30 * torch.sin(2.0 * math.pi * 220.0 * (t - 0.30))
-    )
-    target_img = encode(_stereo(target_mono), SPEC)
-    e_targ = semantic_wavelet_embedding(target_img).detach()
-
-    torch.manual_seed(7)
-    init_mono = 0.08 * torch.randn(n) + 0.15 * torch.sin(2.0 * math.pi * 116.0 * t)
-    cand_audio = _stereo(init_mono).clone().detach().requires_grad_(True)
-    opt = torch.optim.Adam([cand_audio], lr=1.5e-2)
-
-    losses = []
-    sims = []
-    for _ in range(25):
-        opt.zero_grad()
-        cand_img = encode(cand_audio, SPEC)
-        loss = semantic_structure_loss(cand_img, target_img)
-        losses.append(loss.item())
-        with torch.no_grad():
-            e_cand = semantic_wavelet_embedding(cand_img)
-            sims.append((e_cand[0] @ e_targ[0]).item())
-        loss.backward()
-        opt.step()
-
-    fig, axes = plt.subplots(1, 3, figsize=(15.5, 4.8), dpi=160)
-    fig.suptitle(
-        "Experiments 3, 4 & 5: 2D JTFS Chirp Orientation, Invariance vs. Sensitivity & Waveform Autograd",
-        fontsize=13,
-        fontweight="bold",
-        y=0.98,
-    )
-
-    # Panel A: Upward vs Downward Chirp JTFS Tilt (Plane 10)
+    x = np.arange(r_max)
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 4.4), gridspec_kw={"width_ratios": [1.25, 1]})
     ax = axes[0]
-    # Combine upward chirp (left half) and downward chirp (right half) for direct side-by-side view
-    combined_tilt = np.concatenate([planes_chirp[0, 10, 25:80, :], planes_chirp[1, 10, 25:80, :]], axis=1)
-    im = ax.imshow(
-        combined_tilt,
-        origin="lower",
-        aspect="auto",
-        extent=[0.0, 2.4, 25, 80],
-        cmap="coolwarm",
-        vmin=-1.0,
-        vmax=1.0,
-    )
-    ax.axvline(1.2, color="#e6edf3", linestyle="--", lw=1.5)
-    ax.text(0.6, 74, "Upward Chirp\nMean Tilt = +0.40", ha="center", color="#ff7b72", fontweight="bold", fontsize=9)
-    ax.text(1.8, 74, "Downward Chirp\nMean Tilt = -0.42", ha="center", color="#58a6ff", fontweight="bold", fontsize=9)
-    ax.set_title("Exp 3: Plane 10 (jtfs_tilt) Up vs. Down Glide")
-    ax.set_xlabel("Time (0..1.2s Upward | 1.2..2.4s Downward)")
-    ax.set_ylabel("Semitone Row (110 Hz – 880 Hz)")
-    plt.colorbar(im, ax=ax, label="JTFS Directional Tilt [-1, +1]")
-
-    # Panel B: Shift/Phase Invariance vs Timbre/Spatial Sensitivity
+    ax.plot(x, existing[:r_max], color=ORANGE, lw=2, label="existing per-cell coherence")
+    ax.plot(x, prim.phase_coherence[0, :r_max, sl].mean(-1).numpy(), color=BLUE, lw=2, label="bridge coherence")
+    ax.plot(x, gate[0, :r_max, sl].mean(-1).numpy(), color=AQUA, lw=2, label="bridge harmonic gate")
+    _boundary(ax, horizontal=False)
+    ax.text(C1 - 1.5, 1.02, "one sample per cell  |", ha="right", fontsize=8, color=INK_2)
+    ticks, labels = _freq_ticks(r_max)
+    ax.set_xticks(ticks, labels)
+    ax.set_ylim(0, 1.08)
+    ax.set_ylabel("mean on white noise (lower = noise found)")
+    ax.set_title("White noise, per band", loc="left")
+    ax.grid(axis="y")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
     ax = axes[1]
-    labels = [
-        "2.7 ms\nShift",
-        "43 ms\nShift",
-        "90° Phase\nRotation",
-        "Sine vs\nSawtooth",
-        "Sine vs\nSquare",
-        "Mono vs\nAnti-Stereo",
-    ]
-    raw_carrier = [-0.2910, -0.1218, 0.0000, 0.5200, 0.6100, 0.0000]
-    sem_emb = [1.0000, 1.0000, 1.0000, 0.8365, 0.9059, -0.1854]
+    real = results.get("experiment_6_real_notes")
+    if real is None:
+        ax.text(0.5, 0.5, "run semantic_bridge_experiments.py with note_dataset\nfor the real-note comparison",
+                ha="center", va="center", transform=ax.transAxes, color=INK_2)
+        ax.axis("off")
+    else:
+        part = real["a_harmonic_vs_noise_cells_below_440hz"]
+        names = list(part)
+        xs = np.arange(len(names))
+        w = 0.36
+        _bar_labels(ax, ax.bar(xs - w / 2, [part[k]["auc_vox"] for k in names], w, color=BLUE, label="vocal notes"))
+        _bar_labels(ax, ax.bar(xs + w / 2, [part[k]["auc_synth"] for k in names], w, color=ORANGE, label="synth notes"))
+        ax.axhline(0.5, color=INK_2, lw=0.9, linestyle=":")
+        ax.text(len(names) - 0.5, 0.51, "chance", ha="right", va="bottom", fontsize=8, color=INK_2)
+        ax.set_xticks(xs, [k.replace("semantic-bridge ", "bridge ").replace("existing per-cell", "existing per-cell\n")
+                           .replace("bridge harmonic", "bridge\nharmonic").replace("bridge coherence", "bridge\ncoherence")
+                           for k in names])
+        ax.set_ylim(0, 1.05)
+        ax.set_ylabel("AUC, harmonic vs noise cells")
+        n_notes = real["notes"]["cells_notes_per_class"]
+        ax.set_title(f"Real notes below 440 Hz ({n_notes} vocal, {n_notes} synth, {n_notes} noise)", loc="left")
+        ax.grid(axis="y")
+        ax.legend(loc="upper left")
+    fig.tight_layout()
+    return _save(fig, "semantic_bridge_bass_coherence.png")
 
-    x = np.arange(len(labels))
-    w = 0.36
-    ax.bar(x[:3] - w / 2, raw_carrier[:3], w, color="#ff7b72", label="Raw Complex Carrier (Shift-Fragile)")
-    ax.bar(x[:3] + w / 2, sem_emb[:3], w, color="#3fb950", label="Semantic Embedding (Invariant = 1.0)")
-    ax.bar(x[3:], sem_emb[3:], w * 1.3, color="#58a6ff", label="Semantic Embedding (Timbre/Space Sensitive)")
-    ax.axhline(0.0, color="#8b949e", lw=1.0)
-    for i in range(3):
-        ax.text(x[i] + w / 2, sem_emb[i] + 0.03, "1.000", ha="center", fontsize=8, color="#3fb950", fontweight="bold")
-        ax.text(x[i] - w / 2, raw_carrier[i] - 0.11, f"{raw_carrier[i]:.2f}", ha="center", fontsize=8, color="#ff7b72")
-    for i in range(3, 6):
-        val = sem_emb[i]
-        offset = 0.03 if val >= 0 else -0.11
-        ax.text(x[i], val + offset, f"{val:.2f}", ha="center", fontsize=8, color="#58a6ff", fontweight="bold")
 
-    ax.set_xticks(x, labels, fontsize=8)
-    ax.set_ylim(-0.45, 1.18)
-    ax.set_ylabel("Cosine Similarity")
-    ax.set_title("Exp 4: Shift Invariance vs. Timbre Sensitivity")
-    ax.grid(True, axis="y", alpha=0.4)
-    ax.legend(loc="lower left", fontsize=7.5, framealpha=0.9)
+def figure_reassignment(results):
+    """A bass click at 0.50 s and a double click 60 ms apart: raw vs reassigned power."""
+    r = results["experiment_2_heisenberg_trap"]
+    n, sr = SPEC.audio_length, SPEC.sample_rate
+    win = torch.hann_window(64)
+    one, two = torch.zeros(n), torch.zeros(n)
+    one[int(0.5 * sr) - 32:int(0.5 * sr) + 32] = 0.95 * win
+    for at in (0.47, 0.53):
+        two[int(at * sr) - 32:int(at * sr) + 32] = 0.95 * win
+    prim = reassigned_primitives(encode(torch.cat([_stereo(one), _stereo(two)]), SPEC))
+    raw, sharp = prim.mid_power[0, :55, CORE].numpy(), prim.sharp_mid_power[0, :55, CORE].numpy()
+    lo, hi = 30, 70
+    extent = [0.30, 0.70, 0, 55]
+    ticks, labels = _freq_ticks(55)
+    fig, axes = plt.subplots(2, 2, figsize=(12.5, 7.4))
+    spread = r["single_impulse_rms_spread_ms"]
+    for ax, data, title in ((axes[0, 0], raw, f"A. Cell power: RMS spread {spread['raw_wavelet_power_ms']:.1f} ms"),
+                            (axes[0, 1], sharp, f"B. Reassigned power: RMS spread {spread['reassigned_sharp_power_ms']:.1f} ms")):
+        im = ax.imshow(10 * np.log10(data[:, lo:hi] / (data.max() + 1e-30) + 1e-6), origin="lower", aspect="auto",
+                       extent=extent, cmap="magma", vmin=-45, vmax=0)
+        ax.set_yticks(ticks, labels)
+        ax.set_title(title, loc="left")
+        fig.colorbar(im, ax=ax, label="dB re peak")
+    frames = np.arange(lo, hi) * SPEC.hop_ms / 1000
+    share = r["single_impulse_30ms_energy_fraction"]
+    ax = axes[1, 0]
+    for data, color, name, key in ((raw, ORANGE, "cell power", "raw_wavelet_power"),
+                                   (sharp, BLUE, "reassigned", "reassigned_sharp_power")):
+        env = data[16:41, lo:hi].sum(0)
+        ax.plot(frames, env / env.sum(), color=color, lw=2, marker="o", ms=3.5,
+                label=f"{name}: {100 * share[key]:.1f}% within ±1 frame")
+    ax.axvspan(0.49, 0.51, color=GRID, alpha=0.7)
+    ax.set_title("C. Click at 0.50 s, 41-165 Hz: energy per frame", loc="left")
+    ax.set_xlabel("time (s)")
+    ax.set_ylabel("share of energy")
+    ax.grid(axis="y")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=2, fontsize=8.5)
+    p2v = r["double_impulse_60ms_peak_to_valley_db"]
+    ax = axes[1, 1]
+    for data, color, name, key in ((prim.mid_power, ORANGE, "cell power", "raw_wavelet_power_db"),
+                                   (prim.sharp_mid_power, BLUE, "reassigned", "reassigned_sharp_power_db")):
+        level = data[1, 28:47, CORE].mean(0).numpy()[lo:hi]
+        ax.plot(frames, 10 * np.log10(level / level.max() + 1e-6), color=color, lw=2, marker="o", ms=3.5,
+                label=f"{name}: peak to valley {p2v[key]:.1f} dB")
+    for at in (0.47, 0.53):
+        ax.axvline(at, color=INK_2, lw=0.9, linestyle=":")
+    ax.set_ylim(-25, 2)
+    ax.set_title("D. Two clicks 60 ms apart, 82-233 Hz", loc="left")
+    ax.set_xlabel("time (s)")
+    ax.set_ylabel("level (dB re peak)")
+    ax.grid(axis="y")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=2, fontsize=8.5)
+    fig.tight_layout()
+    return _save(fig, "semantic_bridge_reassignment.png")
 
-    # Panel C: Experiment 5 Autograd Optimization Trajectory
+
+def figure_embedding(results):
+    """A: glide direction plane on up/down chirps. B: invariance checks. C: family identification on real notes."""
+    n, sr = SPEC.audio_length, SPEC.sample_rate
+    t = torch.arange(n, dtype=torch.float32) / sr
+    k = math.log(8.0)
+    up = 0.5 * torch.sin(math.pi * t) ** 2 * torch.sin(2 * math.pi * 110.0 * (torch.exp(k * t) - 1) / k)
+    planes = semantic_planes(encode(torch.cat([_stereo(up), _stereo(torch.flip(up, [0]))]), SPEC)).numpy()
+    e3 = results["experiment_3_jtfs_chirp_and_modulation"]["up_vs_down_chirp"]
+    fig, axes = plt.subplots(1, 3, figsize=(15.5, 4.6), gridspec_kw={"width_ratios": [1.1, 1.2, 1.1]})
+    ax = axes[0]
+    im = ax.imshow(np.concatenate([planes[0, 10, 25:80], planes[1, 10, 25:80]], axis=1), origin="lower",
+                   aspect="auto", extent=[0, 2.4, 25, 80], cmap="RdBu_r", vmin=-1, vmax=1)
+    ax.axvline(1.2, color=INK, lw=1)
+    ax.text(0.6, 77, f"rising: mean {e3['mean_jtfs_tilt_up']:+.2f}", ha="center", fontsize=8.5)
+    ax.text(1.8, 77, f"falling: mean {e3['mean_jtfs_tilt_down']:+.2f}", ha="center", fontsize=8.5)
+    ax.set_title("A. Glide direction plane (jtfs_tilt)", loc="left")
+    ax.set_xlabel("rising 110-880 Hz glide | the same, reversed (s)")
+    ax.set_ylabel("semitone row")
+    fig.colorbar(im, ax=ax, label="tilt")
+    ax = axes[1]
+    e4 = results["experiment_4_invariance_vs_sensitivity"]
+    keys = [("shift_2p7ms_similarity", "2.7 ms\nshift"), ("shift_43ms_similarity", "43 ms\nshift"),
+            ("phase_rotation_90deg_similarity", "90° phase\nrotation"), ("sine_vs_sawtooth_110hz", "sine vs\nsaw"),
+            ("sine_vs_square_110hz", "sine vs\nsquare"), ("mono_vs_antiphase_stereo", "mono vs\nanti-phase")]
+    xs = np.arange(len(keys))
+    w = 0.38
+    _bar_labels(ax, ax.bar(xs - w / 2, [e4[k]["raw_complex_carrier_cosine"] for k, _ in keys], w, color=ORANGE,
+                           label="raw complex cells (110 Hz row)"))
+    _bar_labels(ax, ax.bar(xs + w / 2, [e4[k]["semantic_embedding_cosine"] for k, _ in keys], w, color=BLUE,
+                           label="semantic embedding"))
+    ax.axhline(0, color=INK_2, lw=0.8)
+    ax.set_xticks(xs, [label for _, label in keys])
+    ax.set_ylim(-0.45, 1.15)
+    ax.set_ylabel("cosine similarity to the reference note")
+    ax.set_title("B. 110 Hz note vs. changed copies", loc="left")
+    ax.grid(axis="y")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2)
     ax = axes[2]
-    steps = np.arange(1, 26)
-    ax2 = ax.twinx()
-    l1 = ax.plot(steps, losses, "-o", color="#ff7b72", lw=2.0, markersize=4, label="semantic_structure_loss (-14.35%)")
-    l2 = ax2.plot(steps, sims, "-s", color="#3fb950", lw=2.0, markersize=4, label="Embedding Cosine Sim (0.33 → 0.45)")
-    ax.set_xlabel("Adam Optimization Step (192 kHz Waveform)")
-    ax.set_ylabel("Semantic Structure Loss", color="#ff7b72")
-    ax2.set_ylabel("Target Embedding Cosine Similarity", color="#3fb950")
-    ax.set_title("Exp 5: Direct Waveform Autograd Convergence")
-    ax.grid(True, alpha=0.4)
-    lines = l1 + l2
-    ax.legend(lines, [l.get_label() for l in lines], loc="center right", fontsize=8)
-
-    plt.tight_layout(rect=[0, 0, 1, 0.93])
-    out_path = out_dir / "exp3_4_5_jtfs_invariance_autograd.png"
-    fig.savefig(out_path, dpi=160)
-    plt.close(fig)
-    return out_path
+    real = results.get("experiment_6_real_notes")
+    if real is None:
+        ax.text(0.5, 0.5, "run with note_dataset for this panel", ha="center", va="center", transform=ax.transAxes)
+        ax.axis("off")
+    else:
+        emb = real["c_embeddings"]
+        names = ["semantic embedding", "Wavelet2Vec", "mean spectrum"]
+        xs = np.arange(len(names))
+        _bar_labels(ax, ax.bar(xs - w / 2, [emb[k]["family_1nn"] for k in names], w, color=ORANGE, label="raw"))
+        _bar_labels(ax, ax.bar(xs + w / 2, [emb[f"{k}, standardized"]["family_1nn"] for k in names], w, color=BLUE,
+                               label="standardized per dimension"))
+        ax.axhline(emb["chance_family_1nn"], color=INK_2, lw=0.9, linestyle=":")
+        ax.text(len(names) - 0.5, emb["chance_family_1nn"] + 0.01, "chance", ha="right", fontsize=8, color=INK_2)
+        ax.set_xticks(xs, [k.replace(" ", "\n", 1) if k != "Wavelet2Vec" else k for k in names])
+        ax.set_ylim(0, 1)
+        ax.set_ylabel("nearest neighbour is the same family")
+        notes = real["notes"]
+        ax.set_title(f"C. {notes['embedding_synth_families']} synth families, notes ≥ 7 semitones apart", loc="left")
+        ax.grid(axis="y")
+        ax.legend(loc="upper right")
+    fig.tight_layout()
+    return _save(fig, "semantic_bridge_embedding.png")
 
 
 def generate_all_figures() -> list[Path]:
-    out_dir = Path(__file__).resolve().parent.parent / "docs" / "figures"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    paths = [
-        make_figure_1_overview(out_dir),
-        make_figure_2_c1_degeneracy(out_dir),
-        make_figure_3_heisenberg_trap(out_dir),
-        make_figure_4_jtfs_invariance_autograd(out_dir),
-    ]
+    if not RESULTS.exists():
+        raise SystemExit("run experiments/semantic_bridge_experiments.py first")
+    results = json.loads(RESULTS.read_text(encoding="utf-8"))
+    OUT.mkdir(parents=True, exist_ok=True)
+    paths = [figure_overview(), figure_bass_coherence(results), figure_reassignment(results), figure_embedding(results)]
     for p in paths:
-        print(f"Generated: {p}")
+        print(f"wrote {p}")
     return paths
 
 

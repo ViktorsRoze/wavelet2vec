@@ -1,25 +1,31 @@
-"""Reproducible scientific experiments validating the Semantic Bridge on 192 kHz WaveletImage.
+"""Experiments on wavelet2vec.semantic_bridge (192 kHz WaveletImage).
 
-Runs 5 controlled experiments comparing legacy cell-level views (`_cell_stats`, `judge_view`,
-`critic_view`) against `wavelet2vec.semantic_bridge` (`scale_consistent_cell_stats`,
-`reassigned_primitives`, `semantic_planes`, `jtfs_modulation_spectrum`,
-`semantic_wavelet_embedding`, `harmonic_noise_gate`, and `semantic_structure_loss`).
+1-5 use synthetic signals (tones, white noise, clicks, chirps). 6 uses real notes from note_dataset (the
+prepared 192 kHz store of experiments/train_morph.py); it is skipped when that data is not present or with
+--skip-real. Compared against: the per-cell statistics of the existing views (``_cell_stats``, ``judge_view``,
+``critic_view``) and MorphNet-L's actual tonal/noise gate (``morph_large.noise_mask``).
 
-Saves structured results to `experiments/semantic_bridge_results.json`.
+Saves results to `experiments/semantic_bridge_results.json`; `plot_semantic_bridge_figures.py` draws them.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import math
+import sys
+import time
 from pathlib import Path
 from typing import Any, Dict
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
 from wavelet2vec.morph import _cell_stats, judge_view
+from wavelet2vec.morph_large import harmonic_row_mask, noise_gate_inputs, noise_mask
 from wavelet2vec.semantic_bridge import (
     SPEC,
+    fit_embedding_standardizer,
     harmonic_noise_gate,
     jtfs_modulation_spectrum,
     reassigned_primitives,
@@ -58,7 +64,11 @@ def experiment_1_c1_degeneracy() -> Dict[str, Any]:
     # Legacy _cell_stats on c=1 group (rows 0..57)
     _, _, u_re, u_im, leg_mod = _cell_stats(img.groups[1])
     leg_coh = torch.sqrt(u_re ** 2 + u_im ** 2)
-    leg_gate = torch.sigmoid(8.0 * (leg_coh - 0.55) - 3.0 * leg_mod)
+    # MorphNet-L's tonal share (1 - noise share m) in those rows: as trained ("cell") and opt-in ("scale")
+    rows1 = torch.as_tensor(list(img.rows[1]))
+    v1 = img.groups[1]
+    tonal_cell = 1.0 - noise_mask(v1, v1, 1, rows1)
+    tonal_scale = 1.0 - noise_mask(v1, v1, 1, rows1, noise_gate_inputs(img, img, "scale"))
 
     # New scale-consistent primitives and harmonic-noise gate
     prim = reassigned_primitives(img)
@@ -75,8 +85,8 @@ def experiment_1_c1_degeneracy() -> Dict[str, Any]:
             "white_noise_c1_coherence": round(leg_coh[3, :58, sl].mean().item(), 4),
             "tone_A2_mod_depth": round(leg_mod[1, 33, sl].mean().item(), 4),
             "white_noise_c1_mod_depth": round(leg_mod[3, :58, sl].mean().item(), 4),
-            "tone_A2_harmonic_gate": round(leg_gate[1, 33, sl].mean().item(), 4),
-            "white_noise_c1_harmonic_gate": round(leg_gate[3, :58, sl].mean().item(), 4),
+            "tone_A2_morphnet_l_tonal_share": round(tonal_cell[1, 33, sl].mean().item(), 4),
+            "white_noise_c1_morphnet_l_tonal_share": round(tonal_cell[3, :58, sl].mean().item(), 4),
         },
         "semantic_bridge": {
             "tone_E1_coherence": round(prim.phase_coherence[0, 16, sl].mean().item(), 4),
@@ -87,6 +97,8 @@ def experiment_1_c1_degeneracy() -> Dict[str, Any]:
             "white_noise_c1_mod_depth": round(prim.mod_depth[3, :58, sl].mean().item(), 4),
             "tone_A2_harmonic_gate": round(gate[1, 33, sl].mean().item(), 4),
             "white_noise_c1_harmonic_gate": round(gate[3, :58, sl].mean().item(), 4),
+            "tone_A2_morphnet_l_tonal_share": round(tonal_scale[1, 33, sl].mean().item(), 4),
+            "white_noise_c1_morphnet_l_tonal_share": round(tonal_scale[3, :58, sl].mean().item(), 4),
         },
     }
     return results
@@ -284,10 +296,18 @@ def experiment_4_invariance_vs_sensitivity() -> Dict[str, Any]:
             "raw_complex_carrier_cosine": round((z_real_vec[0] @ z_real_vec[3]).item(), 4),
             "semantic_embedding_cosine": round((emb[0] @ emb[3]).item(), 5),
         },
-        "timbre_and_spatial_discrimination_cosine": {
-            "sine_vs_sawtooth_110hz": round((emb[0] @ emb[4]).item(), 4),
-            "sine_vs_square_110hz": round((emb[0] @ emb[5]).item(), 4),
-            "mono_vs_antiphase_stereo": round((emb[0] @ emb[6]).item(), 4),
+        "sine_vs_sawtooth_110hz": {
+            "raw_complex_carrier_cosine": round((z_real_vec[0] @ z_real_vec[4]).item(), 4),
+            "semantic_embedding_cosine": round((emb[0] @ emb[4]).item(), 4),
+        },
+        "sine_vs_square_110hz": {
+            "raw_complex_carrier_cosine": round((z_real_vec[0] @ z_real_vec[5]).item(), 4),
+            "semantic_embedding_cosine": round((emb[0] @ emb[5]).item(), 4),
+        },
+        # anti-phase stereo has no mid signal: the raw mid carrier is all zeros (cosine reported as 0)
+        "mono_vs_antiphase_stereo": {
+            "raw_complex_carrier_cosine": round((z_real_vec[0] @ z_real_vec[6]).item(), 4),
+            "semantic_embedding_cosine": round((emb[0] @ emb[6]).item(), 4),
         },
     }
 
@@ -348,7 +368,137 @@ def experiment_5_gradient_optimization() -> Dict[str, Any]:
     }
 
 
-def run_all_experiments() -> Dict[str, Any]:
+def _auc(pos, neg) -> float:
+    """Probability that a random positive scores above a random negative (ties count half)."""
+    pos, neg = np.asarray(pos, dtype=np.float64), np.asarray(neg, dtype=np.float64)
+    values = np.concatenate([pos, neg])
+    _, inverse, counts = np.unique(values, return_inverse=True, return_counts=True)
+    upper = np.cumsum(counts)
+    ranks = (upper - (counts - 1) / 2.0)[inverse]                 # average rank of each value, ties shared
+    return float((ranks[:len(pos)].sum() - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg)))
+
+
+def experiment_6_real_notes(per_class: int = 48, families: int = 60) -> Dict[str, Any]:
+    """Experiment 6: real notes from note_dataset (needs the prepared store; see train_morph.Catalog).
+
+    a. Harmonic vs noise cells below 440 Hz (one-sample rows): AUC of the existing per-cell coherence, the
+       semantic-bridge coherence and the bridge's harmonic gate. Positives: loud cells (within 30 dB of the
+       note's peak) on a row of one of the first 11 partials of vocal or synth notes (MIDI 36-64). Negatives:
+       loud cells of note-shaped noise bursts (white, pink, brown, band-pass, clicks).
+    b. MorphNet-L's noise share m in those rows: share of cells sent to the noise path (m > 0.5).
+    c. Embeddings: synth-family identification by nearest neighbour (cosine) among notes at least 7 semitones
+       apart, and vocal vs synth by cross-validated logistic regression.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import train_morph as tm
+
+    started = time.time()
+    cat = tm.Catalog()
+    rng = np.random.default_rng(3)
+    core = slice(SPEC.pad_frames, SPEC.pad_frames + SPEC.n_frames)
+    low = [i for i, x in enumerate(cat.notes) if 36 <= x["midi"] <= 64]
+    picks = {k: rng.choice([i for i in low if cat.notes[i]["kind"] == k], per_class, replace=False).tolist()
+             for k in ("vox", "synth")}
+    noise = np.stack([tm.noise_note(rng) for _ in range(per_class)])
+    scores = ("existing per-cell coherence", "semantic-bridge coherence", "semantic-bridge harmonic gate")
+    routes = ("cell (as trained)", "scale", "scale + pitch protection")
+    cells = {k: {name: [] for name in scores} for k in ("vox", "synth", "noise")}
+    routed = {k: {name: [] for name in routes} for k in ("vox", "synth", "noise")}
+
+    def measure(kind, audio, midis):
+        img = encode(torch.from_numpy(audio).float(), SPEC)
+        rows = torch.as_tensor(list(img.rows[1]))
+        prim = reassigned_primitives(img)
+        _, _, u_re, u_im, _ = _cell_stats(img.groups[1])
+        values = {scores[0]: torch.sqrt(u_re ** 2 + u_im ** 2), scores[1]: prim.phase_coherence[:, rows],
+                  scores[2]: harmonic_noise_gate(img)[:, rows]}
+        level = 10 * torch.log10(prim.mid_power[:, rows] + 1e-30)
+        mask = (level > level.amax(dim=(1, 2), keepdim=True) - 30)[..., core]
+        if kind != "noise":
+            mask &= harmonic_row_mask(midis, harmonics=11, reach=0.5)[:, rows][:, :, None]
+        for name in scores:
+            cells[kind][name].append(values[name][..., core][mask].numpy())
+        v = img.groups[1]
+        gates = (None, noise_gate_inputs(img, img, "scale"), noise_gate_inputs(img, img, "scale", midis))
+        for name, gate in zip(routes, gates):
+            routed[kind][name].append((noise_mask(v, v, 1, rows, gate)[..., core][mask] > 0.5).float().numpy())
+
+    for kind, idx in picks.items():
+        for chunk in np.array_split(np.array(idx), 6):
+            measure(kind, np.stack([cat.normalized(int(i))[0] for i in chunk]),
+                    [cat.notes[int(i)]["midi"] for i in chunk])
+    for chunk in np.array_split(np.arange(per_class), 6):
+        measure("noise", noise[chunk], [48] * len(chunk))      # pitch protection at an arbitrary key for noise
+    cells = {k: {name: np.concatenate(v) for name, v in d.items()} for k, d in cells.items()}
+    routed = {k: {name: np.concatenate(v) for name, v in d.items()} for k, d in routed.items()}
+    part_a = {name: {"auc_vox": round(_auc(cells["vox"][name], cells["noise"][name]), 3),
+                     "auc_synth": round(_auc(cells["synth"][name], cells["noise"][name]), 3),
+                     "mean_harmonic_vox": round(float(cells["vox"][name].mean()), 3),
+                     "mean_harmonic_synth": round(float(cells["synth"][name].mean()), 3),
+                     "mean_noise": round(float(cells["noise"][name].mean()), 3)} for name in scores}
+    part_b = {name: {"harmonic_cells_to_noise_vox": round(float(routed["vox"][name].mean()), 3),
+                     "harmonic_cells_to_noise_synth": round(float(routed["synth"][name].mean()), 3),
+                     "noise_cells_to_noise": round(float(routed["noise"][name].mean()), 3)} for name in routes}
+
+    # c. embeddings
+    fams = rng.choice(sorted({n["family"] for n in cat.notes if n["kind"] == "synth"}), families, replace=False)
+    synth = []
+    for f in fams:
+        idx = sorted((i for i, n in enumerate(cat.notes) if n["family"] == f), key=lambda i: cat.notes[i]["midi"])
+        synth += [idx[int(round(k))] for k in np.linspace(0, len(idx) - 1, 6)]
+    vox = rng.choice([i for i, n in enumerate(cat.notes) if n["kind"] == "vox"], 2 * families, replace=False).tolist()
+    notes = synth + vox
+    audio = np.stack([cat.normalized(i)[0] for i in notes])
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    sem, spectrum = [], []
+    for start in range(0, len(notes), 8):
+        img = encode(torch.from_numpy(audio[start:start + 8]).float().to(device), SPEC)
+        with torch.no_grad():
+            sem.append(semantic_wavelet_embedding(img).cpu())
+            spectrum.append(judge_view(img)[:, 0].mean(-1).cpu())
+    sem, spectrum = torch.cat(sem), torch.cat(spectrum)
+    stats = fit_embedding_standardizer(sem)
+    sem_std = F.normalize((sem - stats["mean"]) / stats["std"], dim=-1)
+    w2v = np.stack([tm.w2v_features(a) for a in audio])
+    midi = np.array([cat.notes[i]["midi"] for i in notes])
+    fam = np.array([cat.notes[i]["family"] for i in notes])
+    is_vox = np.array([cat.notes[i]["kind"] == "vox" for i in notes])
+
+    def family_1nn(x):
+        x = np.asarray(x, dtype=np.float64)
+        x = x / np.linalg.norm(x, axis=1, keepdims=True)
+        n = len(synth)
+        sims = x[:n] @ x[:n].T
+        sims[np.abs(midi[:n, None] - midi[None, :n]) < 7] = -np.inf
+        return round(float((fam[:n][sims.argmax(1)] == fam[:n]).mean()), 3)
+
+    def vox_cv(x):
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.model_selection import cross_val_score
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+        clf = make_pipeline(StandardScaler(), LogisticRegression(C=0.1, class_weight="balanced", max_iter=5000))
+        return round(float(cross_val_score(clf, np.asarray(x), is_vox, cv=5, scoring="balanced_accuracy").mean()), 3)
+
+    def zscore(x):
+        return (x - x.mean(0)) / (x.std(0) + 1e-8)
+
+    candidates = [("semantic embedding", sem.numpy()), ("semantic embedding, standardized", sem_std.numpy()),
+                  ("Wavelet2Vec", w2v), ("Wavelet2Vec, standardized", zscore(w2v)),
+                  ("mean spectrum", spectrum.numpy()), ("mean spectrum, standardized", zscore(spectrum.numpy()))]
+    part_c = {name: {"dims": int(x.shape[1]), "family_1nn": family_1nn(x), "vox_vs_synth": vox_cv(x)}
+              for name, x in candidates}
+    return {
+        "notes": {"cells_notes_per_class": per_class, "embedding_synth_notes": len(synth),
+                  "embedding_synth_families": int(families), "embedding_vox_notes": len(vox)},
+        "a_harmonic_vs_noise_cells_below_440hz": part_a,
+        "b_morphnet_l_noise_path_below_440hz": part_b,
+        "c_embeddings": {**part_c, "chance_family_1nn": round(1 / families, 3)},
+        "seconds": round(time.time() - started, 1),
+    }
+
+
+def run_all_experiments(real: bool = True) -> Dict[str, Any]:
     results = {
         "experiment_1_c1_degeneracy": experiment_1_c1_degeneracy(),
         "experiment_2_heisenberg_trap": experiment_2_heisenberg_trap(),
@@ -357,11 +507,21 @@ def run_all_experiments() -> Dict[str, Any]:
         "experiment_5_gradient_optimization": experiment_5_gradient_optimization(),
     }
     out_path = Path(__file__).resolve().parent / "semantic_bridge_results.json"
+    if real:
+        try:
+            results["experiment_6_real_notes"] = experiment_6_real_notes()
+        except (FileNotFoundError, ImportError) as error:
+            print(f"experiment 6 skipped (note_dataset store not available): {error}")
+    if "experiment_6_real_notes" not in results and out_path.exists():   # keep the last real-note results
+        previous = json.loads(out_path.read_text(encoding="utf-8"))
+        if "experiment_6_real_notes" in previous:
+            results["experiment_6_real_notes"] = previous["experiment_6_real_notes"]
     out_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
     return results
 
 
 if __name__ == "__main__":
-    run_all_experiments()
-
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--skip-real", action="store_true", help="skip experiment 6 (real notes)")
+    run_all_experiments(real=not parser.parse_args().skip_real)

@@ -1,15 +1,11 @@
 # wavelet2vec
 
-**New — Differentiable Semantic Bridge for 192 kHz `WaveletImage` (`wavelet2vec.semantic_bridge`).**
-Bridges lossless, phase-preserving complex wavelet carriers (~305 dB float64 / ~132 dB float32)
-and invariant semantic audio understanding. Eliminates the **`c = 1` multirate cell degeneracy**
-across all 58 bands below 440 Hz (where legacy cell coherence saturated at `1.000` even on white
-noise), breaks the **Low-Frequency Heisenberg Trap** via differentiable 2D synchrosqueezed
-reassignment (**9.58× sharper** bass impulse RMS spread: `38.3 ms → 4.0 ms`, `99.4%` energy within
-±1 frame), and adds **2D Joint Time-Frequency Scattering (JTFS)** (`semantic_planes`,
-`semantic_wavelet_embedding`, `harmonic_noise_gate`, `semantic_structure_loss`). See
-[Bridging Signal & Semantics](docs/BRIDGING_SIGNAL_AND_SEMANTICS.md) and the
-[visual benchmark section below](#bridging-192-khz-lossless-wavelet-carriers--semantic-audio-understanding).
+**The semantic bridge (`wavelet2vec.semantic_bridge`) adds differentiable analysis features on top
+of the lossless wavelet image.** It provides a reassigned (sharpened) level, per-cell tonality that also works
+below 440 Hz, glide direction, stereo correlation and a 252-dimensional embedding. On real notes below 440 Hz
+it tells harmonic from noise cells with AUC 0.84–0.88, where the existing view statistics are at chance. Its
+standardized embedding finds a synth's family across pitch for 70% of notes (Wavelet2Vec: 22%). See
+[semantic bridge](docs/BRIDGING_SIGNAL_AND_SEMANTICS.md).
 
 **v0.37.0 streamlines repeated studies and reduces measured overhead.**
 `wavelet2vec-study` provides project discovery, checked caches, shared data
@@ -620,45 +616,27 @@ float64). Regenerate these figures with
 
 Full write-up, figures, and how to reproduce: [experiments/EXPERIMENTS.md](experiments/EXPERIMENTS.md).
 
-### Bridging 192 kHz Lossless Wavelet Carriers & Semantic Audio Understanding
+### Semantic bridge: tonality below 440 Hz, reassigned level, embedding
 
-While `WaveletImage` (192 kHz stereo, 149 semitone bands × 10 ms frames) retains every complex sample for lossless reconstruction (~305 dB SNR in float64), downstream neural backbones, judges, and audio editors face two fundamental physical bottlenecks when reading raw cell statistics:
-1. **The Low-Frequency Heisenberg Trap**: Constant-Q bass filters ($16.35–165\text{ Hz}$) have narrow bandwidths ($\sigma_f \approx 0.4–4\text{ Hz}$), smearing a sharp percussive impulse across **$38.3\text{ ms}$ RMS** ($>200\text{ ms}$ full support).
-2. **The `c = 1` Multirate Cell Degeneracy Below 440 Hz**: The lowest **58 semitone bands** (MIDI 12–69, $16.35–440\text{ Hz}$) store $c = 1$ complex sample per 10 ms frame. Reducing within-cell phase steps along `dim=-1` (`_cell_stats` / `critic_view` / `cell_features`) produces `coherence = 1.0000` and `mod_depth = 0.0000` **even on pure white noise**, locking `MorphNet-L`'s harmonic gate at $m = 0.9734$ (disabling 97.3% of the stochastic noise path below 440 Hz).
+Below 440 Hz a 10 ms cell of the wavelet image holds one complex sample. Within-cell statistics are then
+constant: coherence 1, modulation depth 0, even on noise. `wavelet2vec.semantic_bridge` measures tonality
+there from exact band derivatives instead (amplitude-modulation rate and group-delay dispersion). It also
+reassigns cell energy to its instantaneous pitch and time, and summarizes a clip in a 252-dimensional
+embedding.
 
-`wavelet2vec.semantic_bridge` resolves both problems analytically in PyTorch autograd using exact band-FFT spectral derivatives ($s_0, s_1, s_2$), **Cohen-Mandel instantaneous amplitude modulation** ($\mathrm{Re}(s_1 s_0^*)$), **dimensionless group-delay dispersion** ($\mathrm{Im}(s_2 s_0^*)$), **differentiable 2D soft-bilinear synchrosqueezing**, and **2D Joint Time-Frequency Scattering (JTFS)**:
+![Click, 55 Hz saw note and noise burst: cell level, reassigned level, existing and bridge coherence](docs/figures/semantic_bridge_overview.png)
 
-![Semantic Bridge Overview](docs/figures/semantic_bridge_overview.png)
+| Measured | Existing / raw | Semantic bridge |
+|---|---|---|
+| Real notes below 440 Hz: harmonic vs noise cells (AUC, vocal / synth) | 0.54 / 0.54 | 0.84 / 0.85 (gate 0.87 / 0.88) |
+| Bass click: energy within ±1 frame / RMS spread | 37.7% / 38.3 ms | 99.4% / 4.0 ms |
+| Synth family by nearest neighbour, 60 families, notes ≥ 7 semitones apart | Wavelet2Vec 0.22 | 0.70 (standardized) |
 
-*4-panel visual comparison on a 192 kHz composite signal (bass click at $0.18\text{ s}$, sub-bass $55\text{ Hz}$ + sawtooth glide at $0.28–0.78\text{ s}$, white-noise burst at $0.84–1.12\text{ s}$). **A vs. B:** Differentiable reassignment (`sharp_db`, Plane 2) snaps the smeared bass click back to a $4.0\text{ ms}$ vertical attack edge ($99.4\%$ energy in $\pm 1$ frame) and focuses harmonic partials onto 1-pixel ridges. **C vs. D:** Legacy `_cell_stats` (C) saturates at `1.000` coherence across all 58 bands below $440\text{ Hz}$ even on white noise; `semantic_bridge` (D) cleanly separates tonal harmonics (`1.000`) from bass noise (`0.598`) down to $16.35\text{ Hz}$.*
-
-#### Experiment 1: Eliminating the `c = 1` Multirate Degeneracy Below 440 Hz
-
-![Experiment 1: Fixing the c=1 Degeneracy](docs/figures/exp1_c1_degeneracy_fix.png)
-
-#### Experiment 2: Breaking the Low-Frequency Heisenberg Trap via Differentiable 2D Reassignment
-
-![Experiment 2: Heisenberg Reassignment](docs/figures/exp2_heisenberg_reassignment.png)
-
-#### Experiments 3, 4 & 5: 2D JTFS Chirp Orientation, Shift/Phase Invariance & Waveform Autograd
-
-![Experiments 3, 4 & 5: JTFS, Invariance, and Autograd](docs/figures/exp3_4_5_jtfs_invariance_autograd.png)
-
-#### Summary of Measured Improvements & Unit Tests (`pytest tests/test_semantic_bridge.py`)
-
-| Experiment / Test | Metric | Legacy (`_cell_stats` / `judge_view`) | Semantic Bridge (`semantic_bridge.py`) | Status |
-| :--- | :--- | :---: | :---: | :---: |
-| **Exp 1 (`c = 1` Bass Bug)** | White noise coherence vs. 110 Hz tone ($16.35–440\text{ Hz}$) | `1.0000` vs. `1.0000` *(blind)* | **`0.5975` vs. `1.0000`** | **PASSED** |
-| **Exp 1 (`c = 1` Bass Bug)** | White noise mod depth vs. 110 Hz tone ($16.35–440\text{ Hz}$) | `0.0000` vs. `0.0000` *(blind)* | **`0.8411` vs. `0.0006`** | **PASSED** |
-| **Exp 1 (`c = 1` Bass Bug)** | White noise harmonic gate $m$ ($16.35–440\text{ Hz}$) | `0.9734` *(noise path off)* | **`0.2795`** *(72% noise active)* | **PASSED** |
-| **Exp 2 (Heisenberg Trap)** | Bass impulse energy within $\pm 1$ frame ($41.2–164.8\text{ Hz}$) | `37.74%` | **`99.37%` (2.63×)** | **PASSED** |
-| **Exp 2 (Heisenberg Trap)** | Bass impulse RMS temporal spread $\sigma_t$ | `38.30 ms` | **`4.00 ms` (9.58× sharper)** | **PASSED** |
-| **Exp 2 (Heisenberg Trap)** | 60 ms double-impulse peak-to-valley contrast ($82–233\text{ Hz}$) | `2.31 dB` | **`5.35 dB` (+3.04 dB)** | **PASSED** |
-| **Exp 3 (2D JTFS Glides)** | Upward vs. downward chirp cosine distance ($110 \leftrightarrow 880\text{ Hz}$) | `0.000001` *(1D marginal)* | **`0.1661`** (`tilt`: `+0.40` vs `-0.42`) | **PASSED** |
-| **Exp 4 (Invariance)** | $2.7\text{ ms}$ / $43\text{ ms}$ time shift & $90^\circ$ phase rotation | `-0.2910` / `-0.1218` / `0.0000` | **`1.0000` / `1.0000` / `1.0000`** | **PASSED** |
-| **Exp 5 (Waveform Autograd)** | 25 Adam steps on 192 kHz audio via `semantic_structure_loss` | — | **`-14.35%` loss** (`0.33 → 0.45` sim) | **PASSED** |
-
-Full mathematical proofs, 12-plane specification, and reproduction commands: **[docs/BRIDGING_SIGNAL_AND_SEMANTICS.md](docs/BRIDGING_SIGNAL_AND_SEMANTICS.md)**.
+Tonality, reassigned level and embedding are opt-in for the morph models. Use
+`judge_view(..., stats="scale")` and `critic_view(..., stats="scale")`, and
+`MorphNetL(noise_gate="scale")` with the notes' keys, which keeps their harmonic rows tonal. Trained judges and
+checkpoints keep their statistics. Details, all measurements and limits:
+[docs/BRIDGING_SIGNAL_AND_SEMANTICS.md](docs/BRIDGING_SIGNAL_AND_SEMANTICS.md).
 
 ## How it works
 

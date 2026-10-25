@@ -10,7 +10,8 @@ voice's envelope (a vocoder), nor the reverse.
   18 kHz, levels relative to the note's peak and floored at -60 dB, plus
   phase-increment coherence (re, im) and modulation depth per 10 ms x
   semitone cell. Differentiable (no abs/angle at zero), so it scores
-  generated notes too.
+  generated notes too. ``stats="scale"`` (opt-in, for new runs) fixes the
+  one-sample cells below 440 Hz, see ``VIEW_STATS``.
 - ``JudgeCNN`` / ``JudgeTCN``: two differently built judges with two sigmoid
   heads, "vox present" and "synth present". Trained on clean vox, synth and
   noise (noise: both absent), so "50/50" cannot be reached by garbage.
@@ -58,6 +59,13 @@ NOTE_PLANES = 5
 GRID = (160, 144)            # generator grid: rows, frames (all 136 frames incl. context), padded
 TERMS = ("synth", "vocal", "synth_with_vocal_magnitude", "vocal_with_synth_magnitude")
 TINY = 1e-30
+# Per-cell statistics of the views. "cell": within-cell statistics, what every trained judge, critic and cache
+# saw. In the 58 rows below 440 Hz a cell holds one sample (c = 1), so there the coherence magnitude is
+# always 1 and the modulation depth always 0 (the phase-step direction still varies). "scale": in those rows,
+# coherence magnitude and modulation depth from wavelet2vec.semantic_bridge (amplitude-modulation rate and
+# group-delay dispersion pooled over the band's ring time). Real notes, harmonic vs noise cells below 440 Hz:
+# AUC 0.54 (chance: constant) -> 0.84 (docs/BRIDGING_SIGNAL_AND_SEMANTICS.md). Other rows are identical in both.
+VIEW_STATS = ("cell", "scale")
 
 
 def power(z: torch.Tensor) -> torch.Tensor:
@@ -80,13 +88,35 @@ def _cell_stats(values: torch.Tensor):
     return mean_p, power(side).mean(-1), u.real, u.imag, torch.clamp(mod, max=3.0)
 
 
+def _view_primitives(image: WaveletImage, stats: str):
+    """The semantic-bridge primitives a ``stats="scale"`` view needs, or None for ``"cell"``."""
+    if stats not in VIEW_STATS:
+        raise ValueError(f"stats must be one of {VIEW_STATS}, not {stats!r}")
+    if stats == "cell":
+        return None
+    from wavelet2vec.semantic_bridge import reassigned_primitives
+    return reassigned_primitives(image)
+
+
+def _group_stats(values: torch.Tensor, c: int, rows: torch.Tensor, prim):
+    """``_cell_stats`` of one sample-count group; with ``prim`` (``stats="scale"``), the one-sample rows take
+    their coherence magnitude (the direction stays) and modulation depth from the semantic bridge."""
+    mean_p, side_p, re, im, md = _cell_stats(values)
+    if prim is not None and c == 1:
+        coherence = prim.phase_coherence[:, rows].to(re.dtype)
+        re, im, md = re * coherence, im * coherence, prim.mod_depth[:, rows].to(md.dtype)
+    return mean_p, side_p, re, im, md
+
+
 def _rows_index(image, c, device):
     return torch.as_tensor(list(image.rows[c]), device=device, dtype=torch.long)
 
 
-def judge_view(image: WaveletImage) -> torch.Tensor:
+def judge_view(image: WaveletImage, stats: str = "cell") -> torch.Tensor:
     """``[B, 4, JUDGE_ROWS, FRAMES]``: level re the note's peak (floored at -60 dB, scaled to [-1, 1]),
-    phase-increment coherence re/im and modulation depth (both faded out near the floor). Mid only."""
+    phase-increment coherence re/im and modulation depth (both faded out near the floor). Mid only.
+    ``stats``: see ``VIEW_STATS`` (judges trained on one must be fed the same)."""
+    prim = _view_primitives(image, stats)
     first = next(iter(image.groups.values()))
     b, device, dtype = first.shape[0], first.device, first.real.dtype
     level = torch.full((b, JUDGE_ROWS, TOTAL), -300.0, device=device, dtype=dtype)
@@ -96,8 +126,8 @@ def judge_view(image: WaveletImage) -> torch.Tensor:
         keep = rows < JUDGE_ROWS
         if not bool(keep.any()):
             continue
-        mean_p, _, re, im, md = _cell_stats(values[:, :, keep])
         r = rows[keep]
+        mean_p, _, re, im, md = _group_stats(values[:, :, keep], c, r, prim)
         level = level.index_copy(1, r, 10 * torch.log10(mean_p + TINY))
         ure, uim, mod = ure.index_copy(1, r, re), uim.index_copy(1, r, im), mod.index_copy(1, r, md)
     level, ure, uim, mod = (x[..., CORE] for x in (level, ure, uim, mod))

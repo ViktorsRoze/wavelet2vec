@@ -2,6 +2,7 @@
 import math
 
 import numpy as np
+import pytest
 import torch
 
 from wavelet2vec.morph import (JUDGE_PLANES, JUDGE_ROWS, SPEC, TERMS, Critic, JudgeCNN, JudgeTCN, MorphConfig,
@@ -89,3 +90,22 @@ def test_morphnet_starts_as_an_even_blend_of_its_materials_and_trains():
     grads = [p.grad for p in model.parameters() if p.grad is not None]
     assert grads and all(torch.isfinite(g).all() for g in grads)
     assert math.isclose(float(extras["residual_energy"][0]), 0.0, abs_tol=1e-12)
+
+
+def test_scale_view_stats_fix_one_sample_rows_only():
+    from wavelet2vec.morph import judge_view
+    from wavelet2vec.wavelet_image import band_layout
+    t = np.arange(SPEC.audio_length) / SPEC.sample_rate
+    tone = sum(np.sin(2 * np.pi * 110.0 * k * t) / k for k in range(1, 8)) * 0.1
+    noise = np.random.default_rng(0).standard_normal(t.size) * 0.05
+    image = encode(torch.from_numpy(np.stack([np.stack([tone, tone]), np.stack([noise, noise])])).float(), SPEC)
+    cell, scale = judge_view(image), judge_view(image, "scale")
+    c1 = sum(1 for b in band_layout(SPEC) if b.per_frame == 1)
+    assert torch.equal(cell[:, :, c1:], scale[:, :, c1:]) and torch.equal(cell[:, 0], scale[:, 0])
+    loud = cell[:, 0, :c1] > 0.2
+    mag = lambda v: torch.sqrt(v[:, 1, :c1] ** 2 + v[:, 2, :c1] ** 2)
+    assert torch.allclose(mag(cell)[loud], torch.ones(int(loud.sum())), atol=1e-3)     # "cell": always 1 there
+    assert float(mag(scale)[1][loud[1]].mean()) < float(mag(scale)[0][loud[0]].mean()) - 0.2
+    assert float(cell[1, 3, :c1].abs().max()) < 1e-3 < 0.05 < float(scale[1, 3, :c1][loud[1]].mean())   # modulation
+    with pytest.raises(ValueError):
+        judge_view(image, "other")

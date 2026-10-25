@@ -31,7 +31,11 @@ from the lessons of the small run (docs/MORPH_MODEL.md):
     learned residual. It is used where the source cells are noise-like
     (breath, consonants, noisy synths).
   - m is 0 for coherent (tonal) cells and 1 for noise-like cells, from the
-    phase-increment coherence of the source cells.
+    phase-increment coherence of the source cells (``noise_mask``). With the
+    default ``noise_gate="cell"`` the one-sample cells below 440 Hz always
+    read as coherent, so m = 0 there. ``noise_gate="scale"`` (opt-in, new
+    runs) takes their coherence from wavelet2vec.semantic_bridge and keeps
+    the note's harmonic rows tonal (m = 0), so pitch stays stable.
 
   The result is decoded exactly to 192 kHz stereo.
 - Articulation (syllables, vowels): an optional per-frame target
@@ -59,8 +63,8 @@ from torch import nn
 from wavelet2vec.articulation import ART_CLASSES
 from wavelet2vec.keyboard_v2 import IN_PLANES, KeyboardV2Config
 from wavelet2vec.keyboard_v3 import CARRIERS, FRAMES, GRID, ROWS, KeyboardNetV3, cell_features, inputs_v3
-from wavelet2vec.morph import (BANDS, CORE, GROUPS, SPEC, TOTAL, _cell_stats, _FusionBlock, _fourier, _rows_index,
-                               power)
+from wavelet2vec.morph import (BANDS, CORE, GROUPS, SPEC, TOTAL, VIEW_STATS, _FusionBlock, _fourier,
+                               _group_stats, _rows_index, _view_primitives, power)
 from wavelet2vec.wavelet_image import WaveletImage
 
 CRITIC_TOP_HZ = 20000.0
@@ -75,9 +79,11 @@ TONAL_COHERENCE = 0.75       # phase-increment coherence above which a cell is f
 NOISE_COHERENCE = 0.40       # ... and below which it is fully noise-like (m = 1)
 
 
-def critic_view(image: WaveletImage) -> torch.Tensor:
+def critic_view(image: WaveletImage, stats: str = "cell") -> torch.Tensor:
     """``[B, 5, CRITIC_ROWS, FRAMES]``: mid level and side level re the note's mid peak (floored at -60 dB,
-    scaled to [-1, 1]), mid phase-increment coherence re/im and modulation depth (faded out near the floor)."""
+    scaled to [-1, 1]), mid phase-increment coherence re/im and modulation depth (faded out near the floor).
+    ``stats``: see ``wavelet2vec.morph.VIEW_STATS``; ``judge_view(image, stats)`` is an exact slice of it."""
+    prim = _view_primitives(image, stats)
     first = next(iter(image.groups.values()))
     b, device, dtype = first.shape[0], first.device, first.real.dtype
     mid = torch.full((b, CRITIC_ROWS, TOTAL), -300.0, device=device, dtype=dtype)
@@ -87,8 +93,8 @@ def critic_view(image: WaveletImage) -> torch.Tensor:
         keep = rows < CRITIC_ROWS
         if not bool(keep.any()):
             continue
-        mean_p, side_p, re, im, md = _cell_stats(values[:, :, keep])
         r = rows[keep]
+        mean_p, side_p, re, im, md = _group_stats(values[:, :, keep], c, r, prim)
         mid = mid.index_copy(1, r, 10 * torch.log10(mean_p + 1e-30))
         side = side.index_copy(1, r, 10 * torch.log10(side_p + 1e-30))
         ure, uim, mod = ure.index_copy(1, r, re), uim.index_copy(1, r, im), mod.index_copy(1, r, md)
@@ -194,8 +200,11 @@ class _Fusion(nn.Module):
 
 class MorphNetL(nn.Module):
     def __init__(self, v3_state=None, v2_config: dict | None = None, depths=(4, 8, 2), alpha_dim=256,
-                 residual_hidden=128, max_gain_db=30.0, residual_scale=0.5):
+                 residual_hidden=128, max_gain_db=30.0, residual_scale=0.5, noise_gate: str = "cell"):
         super().__init__()
+        if noise_gate not in VIEW_STATS:
+            raise ValueError(f"noise_gate must be one of {VIEW_STATS}, not {noise_gate!r}")
+        self.noise_gate = noise_gate
         cfg = KeyboardV2Config(**{k: v for k, v in (v2_config or {"size": "large"}).items()})
         self.v3 = KeyboardNetV3(None, cfg)
         if v3_state is not None:
@@ -277,9 +286,10 @@ class MorphNetL(nn.Module):
         return layer(a.transpose(1, 2)).transpose(1, 2)[:, :, None, :]
 
     def decode(self, enc_v, enc_s, alpha, vocal: WaveletImage, synth: WaveletImage, pitch_source=None,
-               articulation=None):
+               articulation=None, midis=None):
         """Hybrid of the encoded notes. ``pitch_source`` per item: 0 = synth (default), 1 = vocal.
-        ``articulation``: ``[B, 10, 120]`` per-frame target (see wavelet2vec.articulation), or None."""
+        ``articulation``: ``[B, 10, 120]`` per-frame target (see wavelet2vec.articulation), or None.
+        ``midis``: the notes' keys; with ``noise_gate="scale"`` their harmonic rows stay tonal."""
         net = self.v3.net
         if pitch_source is None:
             pitch_source = torch.zeros(alpha.shape[0], dtype=torch.long)
@@ -313,9 +323,9 @@ class MorphNetL(nn.Module):
         h = net.refine_full[1](net.refine_full[0](torch.cat([h, full, detail], 1), c), c)[:, :, :ROWS, :FRAMES]
         if articulation is not None:
             h = h + self.art_full(articulation.transpose(1, 2)).transpose(1, 2)[:, :, None, :]
-        return self._render(h, vocal, synth, pitch_source)
+        return self._render(h, vocal, synth, pitch_source, midis)
 
-    def _render(self, h, vocal: WaveletImage, synth: WaveletImage, pitch_source):
+    def _render(self, h, vocal: WaveletImage, synth: WaveletImage, pitch_source, midis=None):
         """Stable-pitch rendering (see the module docstring): exact cells out."""
         b = h.shape[0]
         raw = self.gain(h)                                                          # [B, 8, ROWS, FRAMES]
@@ -328,6 +338,7 @@ class MorphNetL(nn.Module):
         peak_v = max(float(power(v).mean(-1).amax()) for v in vocal.groups.values())
         peak_s = max(float(power(v).mean(-1).amax()) for v in synth.groups.values())
         peak = max(peak_v, peak_s)
+        gate = noise_gate_inputs(vocal, synth, self.noise_gate, midis, h.device)
         groups, residual_energy = {}, 0.0
         for c in vocal.groups:
             rows = _rows_index(vocal, c, h.device)
@@ -346,12 +357,7 @@ class MorphNetL(nn.Module):
                 + (1 - weight) * other / torch.sqrt(power(other) + 1e-10 * peak)
             unit = carrier / torch.sqrt(power(carrier) + 1e-12)
             # tonal (m = 0) or noise-like (m = 1) cells, from the sources' phase-increment coherence (mid)
-            pv_cell, _, re_v, im_v, _ = _cell_stats(v)
-            ps_cell, _, re_s, im_s, _ = _cell_stats(s)
-            coherence = (pv_cell * torch.sqrt(re_v ** 2 + im_v ** 2 + 1e-12) + ps_cell * torch.sqrt(re_s ** 2 + im_s ** 2 + 1e-12)) \
-                / (pv_cell + ps_cell + 1e-30)
-            m = torch.clamp((TONAL_COHERENCE - coherence) / (TONAL_COHERENCE - NOISE_COHERENCE), 0.0, 1.0)
-            m = _within(m[:, None], c)                                              # [B, 1, R, T, c]
+            m = _within(noise_mask(v, s, c, rows, gate)[:, None], c)              # [B, 1, R, T, c]
             # learned residual: phase-locked magnitude and noise, relative to the local level
             res = self.residual[str(c)](h_t[:, :, rows].permute(0, 2, 3, 1)).reshape(b, r, TOTAL, 2, 3, c)
             res = res.permute(0, 3, 1, 2, 4, 5)                                     # [B, 2, R, T, 3, c]
@@ -366,6 +372,43 @@ class MorphNetL(nn.Module):
             residual_energy = residual_energy + power(extra[:, :, :, CORE]).sum((1, 2, 3, 4)) / c
         extras = {"gain_level": level, "residual_energy": residual_energy}
         return WaveletImage(vocal.spec, groups, dict(vocal.rows)), extras
+
+
+def harmonic_row_mask(midis, device=None, harmonics: int = 24, reach: float = 0.75) -> torch.Tensor:
+    """``[B, rows]`` bool: rows within ``reach`` semitones of one of the first ``harmonics`` partials of each key
+    (a partial between two semitone bands marks both)."""
+    rows = torch.arange(SPEC.n_bands, device=device, dtype=torch.float64)
+    out = torch.zeros(len(midis), SPEC.n_bands, dtype=torch.bool, device=device)
+    for i, midi in enumerate(midis):
+        for k in range(1, harmonics + 1):
+            out[i] |= (rows - (float(midi) - SPEC.first_midi + 12 * math.log2(k))).abs() < reach
+    return out
+
+
+def noise_gate_inputs(vocal: WaveletImage, synth: WaveletImage, noise_gate: str = "cell", midis=None, device=None):
+    """What ``noise_mask`` needs beyond the cells: semantic-bridge primitives of both notes and the protected
+    harmonic rows (``noise_gate="scale"``), or None (``"cell"``)."""
+    prim_v, prim_s = _view_primitives(vocal, noise_gate), _view_primitives(synth, noise_gate)
+    if prim_v is None:
+        return None
+    protect = None if midis is None else harmonic_row_mask([int(k) for k in midis], device)
+    return prim_v, prim_s, protect
+
+
+def noise_mask(v: torch.Tensor, s: torch.Tensor, c: int, rows: torch.Tensor, gate=None) -> torch.Tensor:
+    """``[B, R, T]`` noise share m of one sample-count group: 0 for tonal cells, 1 for noise-like cells, from the
+    power-weighted phase-increment coherence of both notes' mid cells (``v``, ``s``: ``[B, 2, R, T, c]``).
+    ``gate``: ``noise_gate_inputs(..., "scale")`` output; one-sample rows then use the semantic-bridge coherence
+    and the notes' harmonic rows stay tonal."""
+    prim_v, prim_s, protect = gate if gate is not None else (None, None, None)
+    pv_cell, _, re_v, im_v, _ = _group_stats(v, c, rows, prim_v)
+    ps_cell, _, re_s, im_s, _ = _group_stats(s, c, rows, prim_s)
+    coherence = (pv_cell * torch.sqrt(re_v ** 2 + im_v ** 2 + 1e-12)
+                 + ps_cell * torch.sqrt(re_s ** 2 + im_s ** 2 + 1e-12)) / (pv_cell + ps_cell + 1e-30)
+    m = torch.clamp((TONAL_COHERENCE - coherence) / (TONAL_COHERENCE - NOISE_COHERENCE), 0.0, 1.0)
+    if protect is not None and c == 1:
+        m = m * (~protect[:, rows])[:, :, None].to(m.dtype)
+    return m
 
 
 def _within(cells: torch.Tensor, c: int) -> torch.Tensor:
@@ -420,7 +463,7 @@ def load_v3_backbone(path):
 def load_morph_large(path, map_location="cpu") -> "MorphNetL":
     """A trained MorphNet-L from a training checkpoint (``{epoch}_epoch.pth``, ``best.pt`` or ``last.pt``)."""
     state = torch.load(path, map_location=map_location, weights_only=False)
-    model = MorphNetL(None, state.get("v2_config"))
+    model = MorphNetL(None, state.get("v2_config"), noise_gate=state.get("noise_gate", "cell"))
     model.load_state_dict(state["G"], strict=False)
     return model.eval()
 
@@ -461,5 +504,6 @@ def generate_hybrid(model: "MorphNetL", vocal_audio, synth_audio, midi: int, alp
     split = lambda sl: {k: (v[sl] if torch.is_tensor(v) else [y[sl] for y in v]) for k, v in enc.items()}
     hybrid, _ = model.decode(split(slice(0, 1)), split(slice(1, 2)), torch.tensor([float(alpha)]),
                              _take(image, slice(0, 1)), _take(image, slice(1, 2)),
-                             torch.tensor([PITCH_SOURCES.index(pitch_source)]), torch.from_numpy(target)[None])
+                             torch.tensor([PITCH_SOURCES.index(pitch_source)]), torch.from_numpy(target)[None],
+                             midis=[midi])
     return decode(hybrid)[0].double().numpy()

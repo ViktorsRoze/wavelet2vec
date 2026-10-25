@@ -69,8 +69,8 @@ import torch.nn.functional as F
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import train_morph as tm  # noqa: E402  (data pipeline and helpers of v1)
 import training_control as ctl  # noqa: E402  (pause / resume)
-from wavelet2vec.morph import (JUDGE_PLANES, JudgeCNN, JudgeTCN, augment_view, judge_view,  # noqa: E402
-                               mix_baseline, vocoder_baseline, vox_probability)
+from wavelet2vec.morph import (JUDGE_PLANES, VIEW_STATS, JudgeCNN, JudgeTCN, augment_view,  # noqa: E402
+                               judge_view, mix_baseline, vocoder_baseline, vox_probability)
 from wavelet2vec.morph_large import (CRITIC_PLANES, FeatureCritic, MorphNetL, backbone_inputs,  # noqa: E402
                                      critic_view, load_v3_backbone, pitch_jitter, vocality)
 from wavelet2vec.articulation import (ART_CLASSES, VOWEL_INDEX, VOWELS, ArticulationJudge,  # noqa: E402
@@ -428,9 +428,10 @@ def evaluate(G, judges, critics, probe, w2v_real, catalog, pools, pairs, art_jud
         enc = G.encode(planes, cond, image)
         ev, es = split_encoding(enc, slice(0, n)), split_encoding(enc, slice(n, 2 * n))
         own = torch.stack([art["targets"][v].float() for v, _, _ in chunk])
-        hybrids = [G.decode(ev, es, alpha, vocal, synth, torch.full((n,), k, dtype=torch.long), own)[0] for k in (0, 1)]
+        hybrids = [G.decode(ev, es, alpha, vocal, synth, torch.full((n,), k, dtype=torch.long), own, midis)[0]
+                   for k in (0, 1)]
         swapped = torch.from_numpy(np.stack([swapped_vowels(art["targets"][v].float().numpy()) for v, _, _ in chunk]))
-        controlled = G.decode(ev, es, alpha, vocal, synth, torch.zeros(n, dtype=torch.long), swapped)[0]
+        controlled = G.decode(ev, es, alpha, vocal, synth, torch.zeros(n, dtype=torch.long), swapped, midis)[0]
         for name, image_ in ((HYBRIDS[0], hybrids[0]), (HYBRIDS[1], hybrids[1]), ("vocal", vocal)):
             rows[name]["articulation_keep_acc"] += vowel_accuracy(art_judge(judge_view(image_)), own)
         rows[HYBRIDS[0]]["articulation_control_acc"] += vowel_accuracy(art_judge(judge_view(controlled)), swapped)
@@ -503,16 +504,16 @@ def write_demos(G, catalog, pairs, folder: Path, art):
     G.eval()
     entries = []
     for k, (v, s, a) in enumerate(pairs):
-        vocal, synth, image, planes, cond, _ = load_batch(catalog, [(v, s, a)])
+        vocal, synth, image, planes, cond, midis = load_batch(catalog, [(v, s, a)])
         enc = G.encode(planes, cond, image)
         alpha = torch.tensor([a], dtype=torch.float32)
         ev, es = split_encoding(enc, slice(0, 1)), split_encoding(enc, slice(1, 2))
         own = art["targets"][v].float().numpy()
         glide = torch.from_numpy(morph_vowels(own, "a", "o"))[None]
         own = torch.from_numpy(own)[None]
-        images = {"hybrid": G.decode(ev, es, alpha, vocal, synth, torch.tensor([0]), own)[0],
-                  "hybrid, vocal pitch": G.decode(ev, es, alpha, vocal, synth, torch.tensor([1]), own)[0],
-                  "hybrid, vowels a→o": G.decode(ev, es, alpha, vocal, synth, torch.tensor([0]), glide)[0],
+        images = {"hybrid": G.decode(ev, es, alpha, vocal, synth, torch.tensor([0]), own, midis)[0],
+                  "hybrid, vocal pitch": G.decode(ev, es, alpha, vocal, synth, torch.tensor([1]), own, midis)[0],
+                  "hybrid, vowels a→o": G.decode(ev, es, alpha, vocal, synth, torch.tensor([0]), glide, midis)[0],
                   "vocal": vocal, "synth": synth, "mix": mix_baseline(vocal, synth, alpha),
                   "vocoder": vocoder_baseline(synth, vocal)}
         nv, ns = catalog.notes[v], catalog.notes[s]
@@ -556,6 +557,10 @@ def main():
     parser.add_argument("--init-from", type=Path, default=None,
                         help="start the generator (and critics) from a MorphNet-L checkpoint; new parts stay zero")
     parser.add_argument("--art-steps", type=int, default=3000, help="articulation judge training steps")
+    parser.add_argument("--noise-gate", choices=VIEW_STATS, default="cell",
+                        help="tonal/noise split of the one-sample cells below 440 Hz: 'cell' (always tonal, as "
+                             "trained so far) or 'scale' (semantic-bridge coherence; the notes' harmonic rows stay "
+                             "tonal). Keep the run's choice when resuming.")
     args = parser.parse_args()
     faulthandler.enable()                          # a native crash leaves a traceback in the error log
     if sys.platform == "win32":                    # keep the PC awake while training (idle sleep)
@@ -644,7 +649,7 @@ def main():
 
     # ---- phase 2: MorphNet-L on the CPU
     state, v2_config = load_v3_backbone(args.v3)
-    G = MorphNetL(state, v2_config)
+    G = MorphNetL(state, v2_config, noise_gate=args.noise_gate)
     del state
     critics = [FeatureCritic(JUDGE_PLANES), FeatureCritic(CRITIC_PLANES)]
     pre = G.pretrained_parameters()
@@ -726,7 +731,8 @@ def main():
         return {"G": G.state_dict(), "critics": [c.state_dict() for c in critics], "opt_g": opt_g.state_dict(),
                 "opt_c": opt_c.state_dict(), "sched": sched.state_dict(), **ctl.random_states(rng, gen),
                 "real_feats": real_feats, "parts": parts, "epoch_seconds": time.time() - started,
-                "epoch": epoch, "step_in_epoch": step, "best": best, "history": history}
+                "epoch": epoch, "step_in_epoch": step, "best": best, "history": history,
+                "v2_config": v2_config, "noise_gate": G.noise_gate}
 
     def checkpoint(epoch, step, parts, started):
         nonlocal best
@@ -738,7 +744,7 @@ def main():
         history.append(record)
         name = f"{point:g}_epoch.pth"
         torch.save({"G": G.state_dict(), "critics": [c.state_dict() for c in critics], "val": val, "metrics": record,
-                    "v2_config": v2_config}, ckpt / name)
+                    "v2_config": v2_config, "noise_gate": G.noise_gate}, ckpt / name)
         is_best = val["score"] < best
         if is_best:
             best = val["score"]
@@ -802,7 +808,7 @@ def main():
             ev, es = split_encoding(enc, slice(0, n)), split_encoding(enc, slice(n, 2 * n))
             total, part_sum, vocs_all, fakes = 0.0, defaultdict(float), [], []
             for ai, alpha in enumerate(alphas):
-                hybrid, extras = G.decode(ev, es, alpha, vocal, synth, pitch, art_target)
+                hybrid, extras = G.decode(ev, es, alpha, vocal, synth, pitch, art_target, midis)
                 refs = dict(base, emb=[refs_all[j][ai] for j in range(len(models))])
                 parts_, vocs, view_h, cview_h = hybrid_losses(hybrid, extras, alpha, judges, critics, refs, gen, real_feats,
                                                               art_judge, art_target)

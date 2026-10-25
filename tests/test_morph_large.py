@@ -77,3 +77,36 @@ def test_morphnet_l_trains_with_finite_gradients():
     new = {id(p) for p in model.new_parameters()}
     assert any(p.grad is not None for p in model.parameters() if id(p) in new)
     assert all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None)
+
+
+def test_noise_gate_scale_finds_bass_noise_and_keeps_harmonic_rows_tonal():
+    from wavelet2vec.morph_large import harmonic_row_mask, noise_gate_inputs, noise_mask
+    rng = np.random.default_rng(0)
+    noise = rng.standard_normal(T.size) * 0.05
+    image = image_of(note(110.0), np.stack([noise, noise]))
+    rows = torch.as_tensor(list(image.rows[1]))
+    v = image.groups[1]
+    core = slice(SPEC.pad_frames, SPEC.pad_frames + SPEC.n_frames)
+    cell = noise_mask(v, v, 1, rows)[..., core]
+    scale = noise_mask(v, v, 1, rows, noise_gate_inputs(image, image, "scale"))[..., core]
+    protected = noise_mask(v, v, 1, rows, noise_gate_inputs(image, image, "scale", [45, 45]))[..., core]
+    assert float(cell.max()) == 0.0                                       # one-sample cells always read as tonal
+    assert float(scale[1].mean()) > 0.3                                   # noise found below 440 Hz
+    harm = harmonic_row_mask([45])[0, rows]
+    assert harm[33] and harm[45] and not harm[34]                         # A2 = row 33, its octave, not between
+    assert float(protected[:, harm].max()) == 0.0 and torch.equal(protected[:, ~harm], scale[:, ~harm])
+
+
+def test_morphnet_l_scale_noise_gate_decodes_with_stable_pitch():
+    torch.manual_seed(0)
+    model = MorphNetL(None, {"size": "tiny"}, depths=(1, 1, 1), alpha_dim=32, residual_hidden=16, noise_gate="scale")
+    ev, es, vocal, synth = encoded_pair(model, note(130.81, vibrato=0.6), note(130.81, partials=16), midi=48)
+    reference = pitch_jitter(synth, [48])[0]
+    with torch.no_grad():
+        hybrid, _ = model.decode(ev, es, torch.tensor([0.5]), vocal, synth, torch.tensor([0]), midis=[48])
+    assert math.isclose(pitch_jitter(hybrid, [48])[0], reference, rel_tol=0.05, abs_tol=0.2)
+    try:
+        MorphNetL(None, {"size": "tiny"}, depths=(1, 1, 1), noise_gate="other")
+        raise AssertionError("invalid noise_gate accepted")
+    except ValueError:
+        pass

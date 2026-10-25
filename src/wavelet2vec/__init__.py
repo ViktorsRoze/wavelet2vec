@@ -225,6 +225,7 @@ from wavelet2vec.drum_analysis import detect_percussive_events, compare_percussi
 from wavelet2vec.study import PercussionStudy, create_percussion_study
 from wavelet2vec.semantic_bridge import (
     ReassignedPrimitives,
+    fit_embedding_standardizer,
     harmonic_noise_gate,
     jtfs_modulation_spectrum,
     reassigned_primitives,
@@ -238,6 +239,7 @@ __version__ = "0.37.0"
 
 __all__ = [
     "ReassignedPrimitives",
+    "fit_embedding_standardizer",
     "harmonic_noise_gate",
     "jtfs_modulation_spectrum",
     "reassigned_primitives",

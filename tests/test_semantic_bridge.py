@@ -182,3 +182,40 @@ def test_shift_invariance_and_timbre_discrimination():
     sim_timbre = (emb[0] @ emb[2]).item()
     assert sim_shifted > 0.995, f"Expected high shift invariance, got {sim_shifted:.5f}"
     assert sim_timbre < 0.92, f"Expected clear sine vs sawtooth separation, got {sim_timbre:.5f}"
+
+
+def test_silence_quiet_and_antiphase_levels():
+    n = SPEC.audio_length
+    t = torch.arange(n, dtype=torch.float32) / SPEC.sample_rate
+    tone = 0.3 * torch.sin(2.0 * math.pi * 220.0 * t)
+    batch = torch.stack([
+        torch.zeros(2, n),                         # digital silence
+        torch.stack([tone, -tone]),                # anti-phase: no mid at all, only side
+        torch.stack([tone, tone]),                 # mono reference
+        torch.stack([0.1 * tone, 0.1 * tone]),     # -20 dB: still above the reference floor
+        torch.stack([1e-5 * tone, 1e-5 * tone]),   # -100 dB: below it
+    ])
+    planes = semantic_planes(encode(batch, SPEC))
+    silence, anti, mono, quiet, faint = planes
+    assert torch.all(silence[[0, 1, 2]] == -1.0) and float(silence[3:].abs().max()) == 0.0
+    assert float(faint[0].max()) == -1.0                                     # at the floor, not stretched up to peak
+    torch.testing.assert_close(quiet[:2], mono[:2], atol=1e-3, rtol=0)       # levels relative to the clip's peak
+    assert float((quiet - mono).abs().mean()) < 1e-4
+    active = mono[0] > 0.6
+    assert float(anti[0].max()) == -1.0                                      # no mid level
+    assert float(anti[1][active].mean()) > 0.95                              # all side
+    assert float(anti[11][active].mean()) < -0.95 and float(mono[11][active].mean()) > 0.95
+
+
+def test_embedding_standardizer():
+    from wavelet2vec.semantic_bridge import fit_embedding_standardizer
+    n = SPEC.audio_length
+    t = torch.arange(n, dtype=torch.float32) / SPEC.sample_rate
+    notes = [0.3 * torch.sin(2.0 * math.pi * f * t) * torch.exp(-t / d) for f, d in
+             [(110, 0.3), (220, 0.8), (330, 0.2), (440, 1.0), (165, 0.5)]]
+    batch = torch.cat([_stereo(x) for x in notes], dim=0)
+    raw = semantic_wavelet_embedding(batch)
+    stats = fit_embedding_standardizer(raw)
+    z = semantic_wavelet_embedding(batch, standardizer=stats)
+    assert z.shape == raw.shape and torch.allclose(z.norm(dim=-1), torch.ones(len(notes)), atol=1e-5)
+    assert float((z @ z.T).fill_diagonal_(0).max()) < float((raw @ raw.T).fill_diagonal_(0).max())

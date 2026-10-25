@@ -1,21 +1,20 @@
-"""Bridging lossless complex wavelet carriers and invariant semantic audio understanding.
+"""Differentiable analysis features on top of the lossless wavelet image (docs/BRIDGING_SIGNAL_AND_SEMANTICS.md).
 
-Built on :mod:`wavelet2vec.wavelet_image` (192 kHz stereo, 149 semitone bands x 10 ms frames).
-While :class:`WaveletImage` retains every exact complex sample for lossless synthesis (~305 dB
-in float64, ~132 dB in float32), downstream understanding models, judges, and audio editors
-need representations that simultaneously:
+:class:`WaveletImage` (192 kHz stereo, 149 semitone rows x 10 ms frames) keeps every complex sample for exact
+synthesis. Judges, critics, losses, retrieval and editor overlays also need features that:
 
-1. Break the **Low-Frequency Heisenberg Trap** (where a 40 Hz constant-Q filter spreads a sharp
-   bass transient across >200 ms) using differentiable time-frequency reassignment driven by
-   spectral phase derivatives.
-2. Eliminate the **``c = 1`` Multirate Cell Degeneracy** (where the lowest 58 semitone bands,
-   MIDI 12..69 / 16.35..440 Hz, hold only 1 complex sample per 10 ms cell, causing within-cell
-   phase coherence to saturate at 1.0 and modulation depth to collapse to 0.0 even on white noise).
-3. Capture **Second-Order Joint Time-Frequency Scattering (JTFS)** invariants (spectro-temporal
-   chirp/formant velocity, harmonic comb regularity, and scale-consistent modulation spectra).
-4. Expose a **12-plane differentiable tensor** (``semantic_planes``) for neural backbones/judges
-   and a **high-precision deterministic embedding** (``semantic_wavelet_embedding``) for retrieval,
-   clustering, and perceptual evaluation.
+1. measure tonality in every band. Below 440 Hz (MIDI 12..69, 58 rows) a cell holds one complex sample, so
+   within-cell statistics are constant there (coherence 1, modulation depth 0, even on noise). Here tonality
+   comes from exact band derivatives: amplitude-modulation rate and group-delay dispersion, normalized by the
+   band width and smoothed over about one ring time of the band;
+2. reassign cell energy to its instantaneous pitch and group-delay time (a differentiable, energy-preserving
+   counterpart of ``detail_view(mode="sharp")``), which localizes bass attacks;
+3. describe spectro-temporal modulation, including glide direction.
+
+``semantic_planes`` gives 12 planes per cell, ``semantic_wavelet_embedding`` a 252-dimensional clip embedding
+(standardize it with ``fit_embedding_standardizer``), ``harmonic_noise_gate`` a tonal/noise map and
+``semantic_structure_loss`` a differentiable distance. Measured on synthetic and real notes in
+experiments/semantic_bridge_experiments.py.
 """
 from __future__ import annotations
 
@@ -43,6 +42,11 @@ DB_SCALE = 30.0
 AGREE_SEMITONES = 0.35
 AGREE_SPREAD = 0.25
 MIN_STAT_SAMPLES = 5  # minimum sample neighborhood for phase coherence & modulation
+SMOOTH_FRAMES = (1.0, 12.0)  # Gaussian width range (frames) for smoothing AM rate and group-delay dispersion
+# Levels are relative to the clip's peak cell, but the reference never drops below this level re full
+# scale (a full-scale sine's cells peak near 0 dB). Silence, and quiet clips, then sit at the floor
+# instead of being stretched up to "peak".
+MIN_REFERENCE_DB = -40.0
 
 
 @dataclass(frozen=True)
@@ -66,6 +70,8 @@ class ReassignedPrimitives:
     freq_agreement: torch.Tensor     # [B, R, T_total] cross-band harmonic ridge agreement in [0, 1]
     time_agreement: torch.Tensor     # [B, R, T_total] cross-band transient time agreement in [0, 1]
     sharp_mid_power: torch.Tensor    # [B, R, T_total] soft-reassigned (synchrosqueezed) Mid power
+    am_rate: torch.Tensor            # [B, R, T_total] |dA/dt| / (2 pi sigma A), unsmoothed (0 on steady tones)
+    gd_dispersion: torch.Tensor      # [B, R, T_total] 2 pi sigma |group delay|, unsmoothed (0 on steady tones)
 
 
 class _DerivativePlan:
@@ -238,6 +244,15 @@ def scale_consistent_cell_stats(
     return mean_mid_p, mean_side_p, coh, u.real, u.imag, torch.clamp(mod, max=3.0)
 
 
+def _smooth_frames(x: torch.Tensor, sigma_frames: torch.Tensor) -> torch.Tensor:
+    """Gaussian smoothing of ``x [B, R, T]`` along frames, width ``sigma_frames [R]`` per row (reflect padded)."""
+    pad = min(int(3 * float(sigma_frames.max())) + 2, x.shape[-1] - 1)
+    xp = F.pad(x, (pad, pad), mode="reflect")
+    freqs = torch.fft.rfftfreq(xp.shape[-1], device=x.device, dtype=x.dtype)
+    response = torch.exp(-2.0 * math.pi ** 2 * sigma_frames[:, None] ** 2 * freqs[None] ** 2)
+    return torch.fft.irfft(torch.fft.rfft(xp) * response, n=xp.shape[-1])[..., pad:pad + x.shape[-1]]
+
+
 def _soft_bilinear_scatter_2d(
     weights: torch.Tensor,
     row_coords: torch.Tensor,
@@ -296,6 +311,8 @@ def reassigned_primitives(image: WaveletImage) -> ReassignedPrimitives:
     vcos_map = torch.zeros_like(mid_p)
     vsin_map = torch.zeros_like(mid_p)
     mod_map = torch.zeros_like(mid_p)
+    am_map = torch.zeros_like(mid_p)
+    gd_map = torch.zeros_like(mid_p)
 
     for c, values in image.groups.items():
         rows, d_time, d_freq = plan.groups[c]
@@ -320,10 +337,6 @@ def reassigned_primitives(image: WaveletImage) -> ReassignedPrimitives:
         left_p = left_p.index_copy(1, rows, power(left).mean(dim=-1))
         right_p = right_p.index_copy(1, rows, power(right).mean(dim=-1))
         cross_re = cross_re.index_copy(1, rows, (mp - sp))
-        coh_map = coh_map.index_copy(1, rows, coh)
-        vcos_map = vcos_map.index_copy(1, rows, vc)
-        vsin_map = vsin_map.index_copy(1, rows, vs)
-        mod_map = mod_map.index_copy(1, rows, md)
 
         # 2. Exact spectral derivatives via band FFT
         s0 = mid.reshape(bsz, r_count, m)
@@ -352,14 +365,13 @@ def reassigned_primitives(image: WaveletImage) -> ReassignedPrimitives:
         inst_am_norm = q_am / (2.0 * math.pi * sigma_r * p_sum)
         inst_gd_norm = 2.0 * math.pi * sigma_r * torch.abs(cell_dt)
 
-        # Smooth over 5 frames so random zeroes of envelope derivative in narrowband noise do not spike
-        k_smooth = torch.tensor([0.15, 0.2, 0.3, 0.2, 0.15], device=device, dtype=real_dtype).view(1, 1, 5)
-        am_pad = F.pad(inst_am_norm, (2, 2), mode="replicate").reshape(bsz * r_count, 1, -1)
-        gd_pad = F.pad(inst_gd_norm, (2, 2), mode="replicate").reshape(bsz * r_count, 1, -1)
-        am_smooth = F.conv1d(am_pad, k_smooth).reshape(bsz, r_count, n_total)
-        gd_smooth = F.conv1d(gd_pad, k_smooth).reshape(bsz, r_count, n_total)
+        # Smooth over about one ring time of the band (1..12 frames): random envelope zeroes of narrowband
+        # noise do not spike, and low bands, whose noise stays steady for tens of ms, see enough of it
+        width = torch.clamp(plan.spread_frames[rows], SMOOTH_FRAMES[0], SMOOTH_FRAMES[1])
+        am_smooth = _smooth_frames(inst_am_norm, width)
+        gd_smooth = _smooth_frames(inst_gd_norm, width)
 
-        # Stationary-phase spectral coherence factor: 1.0 on pure tones, ~0.50 on noise at all scales (incl. c=1)
+        # Stationary-phase spectral coherence factor: 1.0 on steady tones, lower on noise at all scales (incl. c=1)
         spec_coh = torch.exp(-0.85 * (am_smooth ** 2 + gd_smooth ** 2))
         coh_combined = coh * spec_coh
         mod_combined = torch.clamp(torch.maximum(md, 0.85 * am_smooth + 0.45 * gd_smooth), max=3.0)
@@ -368,6 +380,8 @@ def reassigned_primitives(image: WaveletImage) -> ReassignedPrimitives:
         vcos_map = vcos_map.index_copy(1, rows, vc * spec_coh)
         vsin_map = vsin_map.index_copy(1, rows, vs * spec_coh)
         mod_map = mod_map.index_copy(1, rows, mod_combined)
+        am_map = am_map.index_copy(1, rows, inst_am_norm)
+        gd_map = gd_map.index_copy(1, rows, inst_gd_norm)
         df_hz = df_hz.index_copy(1, rows, cell_df)
         dt_sec = dt_sec.index_copy(1, rows, cell_dt)
 
@@ -419,6 +433,8 @@ def reassigned_primitives(image: WaveletImage) -> ReassignedPrimitives:
         freq_agreement=freq_agreement,
         time_agreement=time_agreement,
         sharp_mid_power=sharp_mid_power,
+        am_rate=am_map,
+        gd_dispersion=gd_map,
     )
 
 
@@ -459,18 +475,20 @@ def _jtfs_orientation_plane(sharp_db_norm: torch.Tensor) -> torch.Tensor:
 def semantic_planes(image: WaveletImage, *, core_only: bool = True) -> torch.Tensor:
     """Compute the 12-plane unified semantic & physical feature tensor ``[B, 12, ROWS, FRAMES]``.
 
-    Planes (all scaled to ``[-1, 1]`` or ``[0, 1]``, with silent regions cleanly gated):
-      0. ``mid_db``: Raw cell Mid level in dB relative to clip peak (floored at -60 dB, in [-1, 1]).
-      1. ``side_rel_db``: Side-to-Mid level ratio in dB (in [-1, 1]).
-      2. ``sharp_db``: Differentiable Reassigned (Synchrosqueezed) Mid level in dB (resolves bass
-         Heisenberg smearing and sharpens harmonic ridges, in [-1, 1]).
-      3. ``phase_coherence``: Scale-consistent phase-increment coherence in [0, 1] (fixes c=1 bug).
+    Levels are relative to the clip's loudest cell (mid + side), but never to a peak below
+    ``MIN_REFERENCE_DB`` (-40 dB re full scale): silence and very quiet clips sit at the floor.
+    Planes (all scaled to ``[-1, 1]`` or ``[0, 1]``, gated to their floor values in silent cells):
+      0. ``mid_db``: Raw cell Mid level in dB relative to the reference (floored at -60 dB, in [-1, 1]).
+      1. ``side_rel_db``: Side-to-Mid level ratio in dB (in [-1, 1]; gated by mid + side level).
+      2. ``sharp_db``: Reassigned mid level in dB (energy moved to its instantaneous pitch and group-delay
+         time: sharp bass attacks and partial ridges, in [-1, 1]).
+      3. ``phase_coherence``: Tonality in [0, 1], also in the one-sample rows below 440 Hz.
       4. ``vel_cos``: Demodulated phase velocity cosine in [-1, 1] (weighted by coherence).
       5. ``vel_sin``: Demodulated phase velocity sine in [-1, 1] (sub-semitone pitch offset).
       6. ``group_delay``: Normalized local group-delay time offset in [-1, 1] (sub-sample attack locator).
       7. ``harmonic_agreement``: Cross-band pitch agreement in [0, 1] (1 on resolved harmonic ridges).
       8. ``transient_agreement``: Cross-band time agreement in [0, 1] (1 on broadband/bass attacks).
-      9. ``mod_depth``: Scale-consistent amplitude modulation depth in [0, 1] (fixes c=1 bug).
+      9. ``mod_depth``: Modulation depth in [0, 1] (incl. AM rate and group-delay dispersion).
      10. ``jtfs_tilt``: 2D Joint Time-Frequency Scattering glide/tilt asymmetry in [-1, 1].
      11. ``stereo_corr``: Inter-channel L/R phase correlation in [-1, 1] (+1 mono, 0 wide, -1 anti-phase).
     """
@@ -484,19 +502,26 @@ def semantic_planes(image: WaveletImage, *, core_only: bool = True) -> torch.Ten
 
     mid_db = 10.0 * torch.log10(mid_p + TINY)
     side_db = 10.0 * torch.log10(side_p + TINY)
+    total_db = 10.0 * torch.log10(mid_p + side_p + TINY)
     sharp_db = 10.0 * torch.log10(sharp_p + TINY)
 
-    peak_db = mid_db.amax(dim=(1, 2), keepdim=True)
+    # Reference: the clip's loudest cell (mid + side, so anti-phase material has a level), but never below
+    # MIN_REFERENCE_DB. Digital silence and very quiet clips therefore sit at the floor.
+    peak_db = torch.clamp(total_db.amax(dim=(1, 2), keepdim=True), min=MIN_REFERENCE_DB)
+    sharp_peak_db = torch.clamp(sharp_db.amax(dim=(1, 2), keepdim=True), min=MIN_REFERENCE_DB)
     rel_mid = torch.clamp(mid_db - peak_db, min=FLOOR_DB)
-    rel_sharp = torch.clamp(sharp_db - sharp_db.amax(dim=(1, 2), keepdim=True), min=FLOOR_DB)
+    rel_total = torch.clamp(total_db - peak_db, min=FLOOR_DB)
+    rel_sharp = torch.clamp(sharp_db - sharp_peak_db, min=FLOOR_DB)
     rel_side = torch.clamp(side_db - mid_db, min=-60.0, max=20.0)
 
-    # Smooth activity gate: 0 at FLOOR_DB (-60 dB), 1 at -48 dB and above
+    # Smooth activity gates: 0 at FLOOR_DB (-60 dB), 1 at -48 dB and above. Mid-derived planes use the mid
+    # level; the stereo planes (side ratio, L/R correlation) use mid + side.
     gate = torch.clamp((rel_mid - FLOOR_DB) / 12.0, 0.0, 1.0)
+    stereo_gate = torch.clamp((rel_total - FLOOR_DB) / 12.0, 0.0, 1.0)
     sharp_gate = torch.clamp((rel_sharp - FLOOR_DB) / 12.0, 0.0, 1.0)
 
     p0_mid = rel_mid / (-FLOOR_DB / 2.0) + 1.0
-    p1_side = (rel_side + 20.0) / 40.0 * gate - (1.0 - gate)
+    p1_side = (rel_side + 20.0) / 40.0 * stereo_gate - (1.0 - stereo_gate)
     p2_sharp = rel_sharp / (-FLOOR_DB / 2.0) + 1.0
 
     p3_coh = prim.phase_coherence[..., sl] * gate
@@ -512,7 +537,7 @@ def semantic_planes(image: WaveletImage, *, core_only: bool = True) -> torch.Ten
     rp = prim.right_power[..., sl]
     cross = prim.cross_re[..., sl]
     denom = torch.sqrt(lp * rp + TINY) + 1e-20
-    p11_corr = torch.clamp(cross / denom, -1.0, 1.0) * gate
+    p11_corr = torch.clamp(cross / denom, -1.0, 1.0) * stereo_gate
 
     return torch.stack(
         [
@@ -534,18 +559,17 @@ def semantic_planes(image: WaveletImage, *, core_only: bool = True) -> torch.Ten
 
 
 def jtfs_modulation_spectrum(planes: torch.Tensor, n_freq_groups: int = 7) -> torch.Tensor:
-    """Extract shift-invariant 2D Joint Time-Frequency Scattering modulation descriptors.
+    """Spectro-temporal modulation energy of the reassigned level, pooled per register.
 
-    Applies multi-scale 2D spectro-temporal filters across temporal modulation rates
-    (slow 2 Hz, medium 8 Hz, fast 25 Hz) and spectral pitch scales (fine 0.5 cyc/oct,
-    coarse 0.15 cyc/oct) with signed chirp orientations (+1 upward vs. -1 downward).
+    Complex 2D Gabor filters over (row, frame): temporal rates 2, 8 and 25 Hz, spectral scales of 1 and 3 cycles
+    per octave, each with rising and falling orientation; magnitude averaged per register.
 
     Args:
         planes: ``[B, 12, ROWS, FRAMES]`` output of :func:`semantic_planes`.
         n_freq_groups: Number of auditory frequency registers to pool into.
 
     Returns:
-        Tensor ``[B, D_jtfs]`` of deformation-stable modulation features.
+        Tensor ``[B, 12 * n_freq_groups]``.
     """
     bsz, _, n_rows, n_frames = planes.shape
     sharp = planes[:, 2]  # [B, R, T] in [-1, 1]
@@ -598,18 +622,22 @@ def semantic_wavelet_embedding(
     audio_or_image: torch.Tensor | WaveletImage,
     spec: WaveletImageSpec = SPEC,
     n_registers: int = 7,
+    standardizer: Dict[str, torch.Tensor] | None = None,
 ) -> torch.Tensor:
-    """Compute a complete shift-invariant, phase-aware semantic embedding ``[B, 252]``.
+    """A unit-length embedding ``[B, 252]`` of a clip.
 
     Unites:
       1. Multi-register summary (mean + std) of the 12 reassigned semantic planes (168 dims).
       2. 2D Joint Time-Frequency Scattering (JTFS) signed modulation spectrum (84 dims).
 
-    Invariant to sub-frame phase rotations and time shifts, while distinguishing:
-      - Tones vs. noise in all registers (including sub-bass c=1),
-      - Sharp percussive bass attacks vs. slow swells,
-      - Upward vs. downward pitch glides / formant transitions,
-      - Stereo width and phase correlation per register.
+    Statistics are pooled over time, so the embedding barely changes with a time shift or a carrier
+    phase rotation. It reflects tone vs. noise per register (including below 440 Hz), attack sharpness,
+    glide direction, and stereo width and correlation per register.
+
+    Raw dimensions differ in scale; most of the vector records which cells are empty. Pass a
+    ``standardizer`` from :func:`fit_embedding_standardizer` (fitted on a few hundred reference sounds)
+    to weight dimensions by how much they vary. On note_dataset synth families, identified across
+    7+ semitones by nearest neighbour, that raised accuracy from 0.49 to 0.68 (60 families).
     """
     if isinstance(audio_or_image, WaveletImage):
         image = audio_or_image
@@ -641,18 +669,29 @@ def semantic_wavelet_embedding(
         reg_stats.append(std)
 
     jtfs = jtfs_modulation_spectrum(planes, n_freq_groups=n_registers)
-    embedding = torch.cat([*reg_stats, jtfs], dim=-1)
-    return F.normalize(embedding, dim=-1)
+    embedding = F.normalize(torch.cat([*reg_stats, jtfs], dim=-1), dim=-1)
+    if standardizer is not None:
+        mean = standardizer["mean"].to(embedding)
+        std = standardizer["std"].to(embedding)
+        embedding = F.normalize((embedding - mean) / std, dim=-1)
+    return embedding
+
+
+def fit_embedding_standardizer(embeddings: torch.Tensor) -> Dict[str, torch.Tensor]:
+    """Per-dimension mean and spread of :func:`semantic_wavelet_embedding` outputs (``[N, 252]``, unstandardized)
+    over a reference set of sounds. Save it with the data it came from and reuse it for every comparison."""
+    x = embeddings.detach()
+    if x.ndim != 2 or x.shape[0] < 2:
+        raise ValueError("need at least 2 embeddings, shape [N, D]")
+    return {"mean": x.mean(0), "std": x.std(0, unbiased=False).clamp_min(1e-6)}
 
 
 def harmonic_noise_gate(image: WaveletImage, *, core_only: bool = False) -> torch.Tensor:
-    """Compute a scale-consistent harmonic-vs-stochastic gate ``m in [0, 1]`` of shape ``[B, R, T]``.
+    """Tonal (1) vs noise-like (0) map ``[B, R, T]`` from the bridge coherence, cross-band pitch agreement and
+    modulation depth; meaningful in active cells (silent cells read as noise).
 
-    Unlike the legacy cell-only gate ``sigmoid(8*(coh - 0.55) - 3*mod)`` which saturates at
-    ``0.9734`` across all 58 bands below 440 Hz (``c = 1``) even on pure white noise, this gate
-    combines scale-consistent phase coherence, cross-band harmonic ridge agreement, and
-    scale-consistent modulation depth so that tonal partials approach 1.0 while broadband noise
-    and transients drop below 0.25 in every register from 16.35 Hz to 83.7 kHz.
+    Steady tones give about 0.97 and white noise about 0.2 in every band. On real notes below 440 Hz it separates
+    harmonic from noise cells with AUC about 0.87; the threshold was set on synthetic signals.
     """
     spec = image.spec
     prim = reassigned_primitives(image)
@@ -673,13 +712,14 @@ def semantic_structure_loss(
     transient_weight: float = 1.5,
     jtfs_weight: float = 1.0,
 ) -> torch.Tensor:
-    """Differentiable physical + semantic structure loss between two :class:`WaveletImage` instances.
+    """Differentiable distance between two :class:`WaveletImage` instances, from their semantic planes:
 
-    Combines:
-      - Synchrosqueezed sharp log-power L1 + multiscale L1 (resolves low-frequency Heisenberg blur),
-      - Scale-consistent phase coherence & phase velocity matching (active down to 16.35 Hz),
-      - Cross-band harmonic & transient agreement alignment,
-      - 2D Joint Time-Frequency Scattering (JTFS) modulation spectrum distance.
+      - L1 of level, side and reassigned level planes, also on 2x, 4x and 8x average-pooled grids;
+      - L1 of tonality, phase-step direction and modulation depth;
+      - L1 of group delay, cross-band agreements and glide direction;
+      - L1 of the modulation spectra (:func:`jtfs_modulation_spectrum`).
+
+    Only checked so far by 25 steps of waveform optimization on a synthetic note (loss -13 %).
     """
     p_planes = semantic_planes(pred, core_only=True)
     t_planes = semantic_planes(target, core_only=True)
